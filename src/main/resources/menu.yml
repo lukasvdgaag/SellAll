@@ -1,0 +1,93 @@
+item-list-menu:
+  menu_title: '&8&lSell All (item list)'
+  next_page_sound: ENTITY_ITEM_FRAME_REMOVE_ITEM
+  previous_page_sound: ENTITY_ITEM_FRAME_REMOVE_ITEM
+
+  return:
+    material: BOOK
+    displayName: '&aSell All Menu'
+    lore:
+      - '&7Click to go back to the item sell menu'
+  fill:
+    material: BLUE_STAINED_GLASS_PANE
+  next_page:
+    material: PAPER
+    displayName: '&bNext page'
+    lore:
+      - '&7Click here to go to page %page%'
+  previous_page:
+    material: PAPER
+    displayName: '&bPrevious page'
+    lore:
+      - '&7Click here to go to page %page%'
+  item: # this is the actual item lore, so the item that's being displayed
+    lore:
+      - '&bWorth: &7%worth%'
+
+sell-menu:
+  menu_title: '&8&lSell All'
+  invalid_item_sound: ENTITY_VILLAGER_NO
+  menu_sound_open: BLOCK_ENDER_CHEST_OPEN
+  sell_sound: ENTITY_VILLAGER_TRADE
+  cancel_sound: BLOCK_BEEHIVE_EXIT
+  item_add_sound: BLOCK_NOTE_BLOCK_PLING
+  item_remove_sound: ENTITY_ITEM_FRAME_REMOVE_ITEM
+
+  cancel_message:
+    - '&cYou cancelled your item selling!'
+    - '&7All items have been returned to your inventory.'
+  sell_message:
+    - '&8&m--------------------------------------------'
+    - '&aThanks for the sale, &b%player%!'
+    - '&7You earned: &b%earned% SBDollars'
+    - '&7Taxes: %tax_percentage%% (%tax_amount% SBDollars)'
+    - '&aA net amount of $%net% has been added to your account!'
+    - '&8&m--------------------------------------------'
+
+
+  item_worth_list:
+    material: CHEST
+    displayName: '&e&lWorth item list'
+    lore:
+      - '&8&m-----------------------------------'
+      - '&r'
+      - '       &f&lClick&7 to Open Worth Item List'
+      - ''
+      - '&8&m-----------------------------------'
+  info:
+    material: BOOK
+    displayName: '&eHow to sell your items'
+    lore:
+      - '&7Click an item in your inventory to add it'
+      - '&7to the sell menu. If you think you''re ready,'
+      - '&7click the &aslime ball&7 to sell the items'
+  fill:
+    material: BLUE_STAINED_GLASS_PANE
+  no_item_added:
+    material: BLACK_STAINED_GLASS_PANE
+    displayName: '&cNo item'
+    lore: [ ]
+  item_added:
+    material: GREEN_STAINED_GLASS_PANE
+    displayName: '&a&lFilled'
+    lore:
+      - '&7&m+--------------------------+'
+      - '&r'
+      - '       &b&lWorth: &f&l$%worth%'
+      - '&r'
+      - '&7&m+--------------------------+'
+  cancel:
+    material: BARRIER
+    displayName: '&cCancel Sell All'
+    lore:
+      - '&7Cancel the selling of your items.'
+      - '&7All items will be put back in your inventory.'
+  proceed:
+    material: SLIME_BALL
+    displayName: '&aSell the items'
+    lore:
+      - '&7Click this item to proceed to your selling.'
+      - '&r'
+      - '&bWorth: &a$%totalworth%'
+      - '&cTax: &7$%tax_amount% (%tax_percentage%%)'
+      - '&aNet amount: $%net%'

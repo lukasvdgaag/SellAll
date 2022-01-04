@@ -1,0 +1,6 @@
+SellAll.iml
+.flattened-pom.xml
+/out
+/.idea
+/target
+/src/test
