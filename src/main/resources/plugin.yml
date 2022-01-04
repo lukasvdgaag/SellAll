@@ -1,5 +1,5 @@
 name: SellAll
-version: ${project.version}
+version: ${plugin-version}
 description: Custom Sell All plugin
 author: GaagjesCraft Network Team
 main: net.gcnt.sellall.SellAll
