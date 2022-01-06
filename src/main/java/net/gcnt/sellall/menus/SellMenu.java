@@ -3,23 +3,24 @@ package net.gcnt.sellall.menus;
 import com.google.common.collect.Lists;
 import net.gcnt.sellall.SellAll;
 import net.gcnt.sellall.files.MenuFile;
-import net.gcnt.sellall.files.itemworths.Item;
+import net.gcnt.sellall.items.Item;
 import net.gcnt.sellall.utils.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-public class SellMenu extends Menu {
+public class SellMenu extends Menu implements Listener {
 
-    private static final List<Integer> ORANGE_GLASS_SLOTS = Lists.newArrayList(
+    private static final List<Integer> GLASS_SLOTS = Lists.newArrayList(
             0, 1, 2, 3, 5, 6, 7, 8,
             17,
             18, 26,
@@ -35,11 +36,14 @@ public class SellMenu extends Menu {
             19, 20, 21, 22, 23, 24, 25,
             37, 38, 39, 40, 41, 42, 43
     );
-    private static final HashMap<Player, List<ItemStack>> PLAYER_SELLS = new HashMap<>();
-    private static final HashMap<Player, Boolean> PLAYER_CANCEL_CLOSE = new HashMap<>();
+
+    private final HashMap<UUID, List<ItemStack>> playerSells;
+    public final List<UUID> playerCancelClose;
 
     public SellMenu(SellAll plugin) {
         super(plugin);
+        playerCancelClose = new ArrayList<>();
+        playerSells = new HashMap<>();
     }
 
     @Override
@@ -49,15 +53,29 @@ public class SellMenu extends Menu {
 
         Inventory gui = Bukkit.createInventory(null, 54, Utils.c(mf.getSellMenuTitle()));
 
+        player.openInventory(gui);
+        playerCancelClose.remove(player.getUniqueId());
+        loadItems(player, gui, mf);
+    }
+
+    public void loadItems(Player player, Inventory gui, MenuFile mf) {
         final ItemStack worthList = createItemStack(mf.getItemWorthOpenMaterial(), Utils.c(mf.getItemWorthOpenDisplayName()), Utils.c(mf.getItemWorthOpenLore()));
         gui.setItem(4, worthList);
 
         final ItemStack info = createItemStack(mf.getInfoMaterial(), Utils.c(mf.getInfoDisplayName()), Utils.c(mf.getInfoLore()));
         gui.setItem(53, info);
 
-        final ItemStack orangeFill = createItemStack(mf.getFillMaterial(), "§r", new ArrayList<>());
-        for (int slot : ORANGE_GLASS_SLOTS) {
-            gui.setItem(slot, orangeFill);
+        final ItemStack glassFill = createItemStack(mf.getFillMaterial(), "§r", new ArrayList<>());
+        for (int slot : GLASS_SLOTS) {
+            gui.setItem(slot, glassFill);
+        }
+
+        // clearing the item slots if not present.
+        int curSize = 0;
+        final int size = playerSells.getOrDefault(player.getUniqueId(), new ArrayList<>()).size();
+        for (int slot : ITEM_SELL_SLOTS) {
+            if (curSize >= size) gui.setItem(slot, null);
+            curSize++;
         }
 
         final ItemStack desc = createItemStack(mf.getNoItemAddedMaterial(), Utils.c(mf.getNoItemAddedDisplayName()), Utils.c(mf.getNoItemAddedLore()));
@@ -68,7 +86,7 @@ public class SellMenu extends Menu {
         final ItemStack cancel = createItemStack(mf.getCancelMaterial(), Utils.c(mf.getCancelDisplayName()), Utils.c(mf.getCancelLore()));
         gui.setItem(9, cancel);
 
-        List<ItemStack> currentAdded = PLAYER_SELLS.getOrDefault(player, Lists.newArrayList());
+        List<ItemStack> currentAdded = playerSells.getOrDefault(player.getUniqueId(), Lists.newArrayList());
 
         int current = 0;
         for (ItemStack cur : currentAdded) {
@@ -78,12 +96,12 @@ public class SellMenu extends Menu {
             gui.setItem(ITEM_SELL_SLOTS.get(current), cur);
 
             double worth = 0;
-            Item ci = Item.fromMaterial(plugin.getItemFile(), cur.getType());
+            Item ci = Item.fromMaterial(plugin.getItemFile(), cur);
+
             if (ci != null) {
                 worth = ci.getSellWorth() * cur.getAmount();
             }
-
-            final ItemStack filled = createItemStack(mf.getItemAddedMaterial(), Utils.c(mf.getItemAddedDisplayName()), Utils.c(Utils.replace(mf.getItemAddedLore(), "%worth%", worth + "")));
+            ItemStack filled = createItemStack(mf.getItemAddedMaterial(), Utils.c(mf.getItemAddedDisplayName()), Utils.c(Utils.replace(mf.getItemAddedLore(), "%worth%", worth + "")));
             gui.setItem(ITEM_DESCRIPTION_SLOTS.get(current), filled);
 
             current++;
@@ -93,7 +111,7 @@ public class SellMenu extends Menu {
         double taxAmount;
         double taxPercentage = plugin.getUtils().getTax(player);
         for (ItemStack item : currentAdded) {
-            Item ci = Item.fromMaterial(plugin.getItemFile(), item.getType());
+            Item ci = Item.fromMaterial(plugin.getItemFile(), item);
             if (ci != null) {
                 totalWorth += (ci.getSellWorth() * item.getAmount());
             }
@@ -103,97 +121,50 @@ public class SellMenu extends Menu {
         final ItemStack item = createItemStack(mf.getProceedMaterial(), Utils.c(mf.getProceedDisplayName()), Utils.c(Utils.replace(Utils.replace(Utils.replace(Utils.replace(mf.getProceedLore(), "%net%", String.format("%.2f", (totalWorth - taxAmount))), "%tax_percentage%", taxPercentage + ""), "%tax_amount%", String.format("%.2f", taxAmount)), "%totalworth%", String.format("%.2f", totalWorth))));
         gui.setItem(49, item);
 
-        player.openInventory(gui);
-        PLAYER_SELLS.put(player, currentAdded);
+        playerSells.put(player.getUniqueId(), currentAdded);
     }
 
-    @Override
+    @EventHandler
     public void onClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
 
         if (e.getClickedInventory() == null) return;
-        if (!PLAYER_SELLS.containsKey(player)) return;
+        if (!playerSells.containsKey(player.getUniqueId())) return;
         // player is in the menu
         e.setCancelled(true);
+        if (playerCancelClose.contains(player.getUniqueId())) return;
 
-        if (e.getClickedInventory() != e.getView().getTopInventory()) {
+        if (e.getClickedInventory().equals(e.getView().getTopInventory())) {
             // click top inventory
             switch (e.getSlot()) {
                 case 4 -> {
-                    PLAYER_CANCEL_CLOSE.put(player, true);
-                    for (ItemStack item : PLAYER_SELLS.get(player)) {
-                        player.getInventory().addItem(item);
-                    }
-                    PLAYER_SELLS.remove(player);
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> plugin.getItemListMenu().openMenu(player, true, 1), 2);
+                    playerCancelClose.add(player.getUniqueId());
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        plugin.getItemListMenu().openMenu(player, true, 1);
+                        playerCancelClose.remove(player.getUniqueId());
+                    }, 2);
 
-                    PLAYER_CANCEL_CLOSE.remove(player);
                 }
-                case 9 -> player.closeInventory();
+                case 9 -> {
+                    final Location location = player.getLocation().getBlock().getLocation();
+                    player.getInventory().addItem(playerSells.get(player.getUniqueId()).toArray(new ItemStack[]{}))
+                            .forEach((integer, itemStack) ->
+                                    player.getWorld().dropItem(location.add(0.5, 0.25, 0.5), itemStack)
+                            );
+                    playerSells.remove(player.getUniqueId());
+                    player.closeInventory();
+                }
                 case 49 -> {
-                    if (PLAYER_SELLS.get(player).size() > 0) {
-                        double totalWorth = 0;
-                        double taxAmount;
-                        double taxPercentage = plugin.getUtils().getTax(player);
-
-                        List<ItemStack> sold = Lists.newArrayList();
-
-                        for (ItemStack item : PLAYER_SELLS.get(player)) {
-                            Item ci = Item.fromMaterial(plugin.getItemFile(), item.getType());
-                            if (ci != null) {
-                                totalWorth += (ci.getSellWorth() * item.getAmount());
-                                sold.add(item);
-                            }
-                        }
-
-                        taxAmount = totalWorth * (taxPercentage / 100);
-                        double earned = totalWorth - taxAmount;
-
-                        plugin.getLog().log(player, sold, Double.parseDouble(String.format("%.2f", taxAmount)));
-                        plugin.getEconomy().depositPlayer(Bukkit.getOfflinePlayer(player.getUniqueId()), earned);
-                        PLAYER_CANCEL_CLOSE.put(player, true);
-                        player.closeInventory();
-                        PLAYER_CANCEL_CLOSE.remove(player);
-                        PLAYER_SELLS.remove(player);
-
-                        player.playSound(player.getLocation(), plugin.getMenuFile().getSellSound(), 1, 1);
-                        for (String s :
-                                Utils.c(Utils.replace(Utils.replace(Utils.replace(Utils.replace(Utils.replace(plugin.getMenuFile().getSellMessage(), "%net%", String.format("%.2f", earned)), "%tax_amount%", String.format("%.2f", taxAmount)), "%tax_percentage%", taxPercentage + ""), "%totalworth%", String.format("%.2f", totalWorth) + ""), "%player%", player.getName()))) {
-                            player.sendMessage(s);
-                        }
+                    if (playerSells.get(player.getUniqueId()).size() > 0) {
+                        sellItems(player);
                     } else {
                         player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
                     }
                 }
                 default -> {
                     if (ITEM_SELL_SLOTS.contains(e.getSlot()) && e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
-                        List<ItemStack> iis = PLAYER_SELLS.get(player);
-                        int index = iis.indexOf(e.getCurrentItem());
-
-                        if (!e.isShiftClick()) {
-                            // only add one
-                            ItemStack current = e.getCurrentItem();
-                            int amount = current.getAmount();
-                            if (amount == 1) {
-                                iis.remove(index);
-                                player.getInventory().addItem(current);
-                            } else {
-                                current.setAmount(amount - 1);
-                                iis.set(index, current);
-                                ItemStack it = current.clone();
-                                it.setAmount(1);
-                                player.getInventory().addItem(it);
-                            }
-                        } else {
-                            iis.remove(index);
-                            player.getInventory().addItem(e.getCurrentItem());
-                        }
-
-                        PLAYER_SELLS.put(player, iis);
-                        player.playSound(player.getLocation(), plugin.getMenuFile().getItemRemoveSound(), 1, 1);
-                        PLAYER_CANCEL_CLOSE.put(player, true);
-                        openMenu(player, false, 1);
-                        PLAYER_CANCEL_CLOSE.remove(player);
+                        removeSellItems(player, e.isShiftClick(), e.getCurrentItem());
+                        loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
                     }
                 }
             }
@@ -202,106 +173,164 @@ public class SellMenu extends Menu {
             // clicked bottom inventory
             if (e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR) return;
 
-            List<ItemStack> items = PLAYER_SELLS.get(player);
+            List<ItemStack> items = playerSells.get(player.getUniqueId());
 
-            Item item = Item.fromMaterial(plugin.getItemFile(), e.getCurrentItem().getType());
+            Item item = Item.fromMaterial(plugin.getItemFile(), e.getCurrentItem());
             if (item == null) {
                 player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
                 return;
             }
 
             if (items.size() < 14) {
-                if (!e.isShiftClick()) {
-                    // only add one
-                    ItemStack current = e.getCurrentItem();
-                    int amount = current.getAmount();
-                    boolean yes = false;
+                addSellItem(e.isShiftClick(), e.getCurrentItem(), items, e);
 
-                    for (ItemStack it : items) {
-                        if (it.getType() == current.getType() && it.getAmount() < it.getMaxStackSize()) {
-                            int index = items.indexOf(it);
-                            ItemStack i = items.get(index);
-                            i.setAmount(i.getAmount() + 1);
-                            items.set(index, i);
-                            yes = true;
-                            break;
-                        }
-                    }
-
-                    if (amount == 1) {
-                        if (!yes) {
-                            items.add(current);
-                        }
-                        e.setCurrentItem(null);
-                    } else {
-                        current.setAmount(amount - 1);
-                        e.setCurrentItem(current);
-                        current.setAmount(1);
-                    }
-
-                    if (!yes) {
-                        items.add(current);
-                    }
-
-                } else {
-                    boolean yes = false;
-                    ItemStack current = e.getCurrentItem();
-                    int amountLeft = current.getAmount();
-                    for (ItemStack it : items) {
-                        if (it.getType() == current.getType() && it.getAmount() < it.getMaxStackSize()) {
-                            int index = items.indexOf(it);
-                            ItemStack i = items.get(index);
-                            if (i.getAmount() + amountLeft <= it.getMaxStackSize()) {
-                                i.setAmount(i.getAmount() + amountLeft);
-                                amountLeft = 0;
-                                items.set(index, i);
-                                yes = true;
-                                break;
-                            } else {
-                                int min = i.getMaxStackSize() - i.getAmount();
-                                i.setAmount(i.getMaxStackSize());
-                                items.set(index, i);
-                                amountLeft = amountLeft - min;
-                            }
-                            break;
-                        }
-                    }
-
-                    if (!yes) {
-                        current.setAmount(amountLeft);
-                        items.add(current);
-                    }
-                    e.setCurrentItem(null);
-                }
-
-                PLAYER_SELLS.put(player, items);
-                PLAYER_CANCEL_CLOSE.put(player, true);
+                playerSells.put(player.getUniqueId(), items);
+                playerCancelClose.add(player.getUniqueId());
                 player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
-                openMenu(player, false, 1);
-                PLAYER_CANCEL_CLOSE.remove(player);
+                loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
+                playerCancelClose.remove(player.getUniqueId());
             }
         }
     }
 
-    @Override
+    private void sellItems(Player player) {
+        double totalWorth = 0;
+        double taxAmount;
+        double taxPercentage = plugin.getUtils().getTax(player);
+
+        List<ItemStack> sold = Lists.newArrayList();
+
+        for (ItemStack item : playerSells.get(player.getUniqueId())) {
+            Item ci = Item.fromMaterial(plugin.getItemFile(), item);
+            if (ci != null) {
+                totalWorth += (ci.getSellWorth() * item.getAmount());
+                sold.add(item);
+            }
+        }
+
+        taxAmount = totalWorth * (taxPercentage / 100);
+        double earned = totalWorth - taxAmount;
+        final double tax = (int) (taxAmount * 100) / 100d;
+        plugin.getLog().log(player, sold, tax);
+        plugin.getEconomy().depositPlayer(Bukkit.getOfflinePlayer(player.getUniqueId()), earned);
+        playerCancelClose.add(player.getUniqueId());
+        player.closeInventory();
+        playerCancelClose.remove(player.getUniqueId());
+        playerSells.remove(player.getUniqueId());
+
+        player.playSound(player.getLocation(), plugin.getMenuFile().getSellSound(), 1, 1);
+        for (String s :
+                Utils.c(Utils.replace(Utils.replace(Utils.replace(Utils.replace(Utils.replace(plugin.getMenuFile().getSellMessage(), "%net%", String.format("%.2f", earned)), "%tax_amount%", tax + ""), "%tax_percentage%", taxPercentage + ""), "%totalworth%", String.format("%.2f", totalWorth) + ""), "%player%", player.getName()))) {
+            player.sendMessage(s);
+        }
+    }
+
+    private void removeSellItems(Player player, boolean shiftClick, ItemStack currentItem) {
+        List<ItemStack> iis = playerSells.get(player.getUniqueId());
+        int index = iis.indexOf(currentItem);
+
+        if (!shiftClick) {
+            // only add one
+            int amount = currentItem.getAmount();
+            if (amount == 1) {
+                iis.remove(index);
+                player.getInventory().addItem(currentItem);
+            } else {
+                currentItem.setAmount(amount - 1);
+                iis.set(index, currentItem);
+                ItemStack it = currentItem.clone();
+                it.setAmount(1);
+                player.getInventory().addItem(it);
+            }
+        } else {
+            iis.remove(index);
+            player.getInventory().addItem(currentItem);
+        }
+
+        playerSells.put(player.getUniqueId(), iis);
+        player.playSound(player.getLocation(), plugin.getMenuFile().getItemRemoveSound(), 1, 1);
+    }
+
+    private void addSellItem(boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {
+        int amount = currentItem.getAmount();
+        boolean yes = false;
+        if (!shiftClick) {
+            // only add one
+
+            for (ItemStack it : items) {
+                if (it.getType() == currentItem.getType() && it.getAmount() < it.getMaxStackSize()) {
+                    int index = items.indexOf(it);
+                    ItemStack i = items.get(index);
+                    i.setAmount(i.getAmount() + 1);
+                    items.set(index, i);
+                    yes = true;
+                    break;
+                }
+            }
+
+            if (amount == 1) {
+                if (!yes) {
+                    items.add(currentItem);
+                }
+                e.setCurrentItem(null);
+            } else {
+                currentItem.setAmount(amount - 1);
+                e.setCurrentItem(currentItem);
+                currentItem.setAmount(1);
+            }
+
+            if (!yes) {
+                items.add(currentItem);
+            }
+
+        } else {
+            for (ItemStack it : items) {
+                if (it.getType() == currentItem.getType() && it.getAmount() < it.getMaxStackSize()) {
+                    int index = items.indexOf(it);
+                    ItemStack i = items.get(index);
+                    if (i.getAmount() + amount <= it.getMaxStackSize()) {
+                        i.setAmount(i.getAmount() + amount);
+                        amount = 0;
+                        items.set(index, i);
+                        yes = true;
+                        break;
+                    } else {
+                        int min = i.getMaxStackSize() - i.getAmount();
+                        i.setAmount(i.getMaxStackSize());
+                        items.set(index, i);
+                        amount = amount - min;
+                    }
+                    break;
+                }
+            }
+
+            if (!yes) {
+                currentItem.setAmount(amount);
+                items.add(currentItem);
+            }
+            e.setCurrentItem(null);
+        }
+    }
+
+    @EventHandler
     public void onClose(InventoryCloseEvent e) {
         Player player = (Player) e.getPlayer();
 
-        if (e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getSellMenuTitle())) && !PLAYER_CANCEL_CLOSE.getOrDefault(player, false)) {
-            if (!PLAYER_SELLS.containsKey(player)) return;
+        if (e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getSellMenuTitle())) && !playerCancelClose.contains(player.getUniqueId())) {
+            if (!playerSells.containsKey(player.getUniqueId())) return;
 
-            for (ItemStack item : PLAYER_SELLS.get(player)) {
+            for (ItemStack item : playerSells.get(player.getUniqueId())) {
                 player.getInventory().addItem(item);
             }
-            PLAYER_CANCEL_CLOSE.remove(player);
+            playerCancelClose.remove(player.getUniqueId());
 
-            if (PLAYER_SELLS.get(player).size() > 0) {
+            if (playerSells.get(player.getUniqueId()).size() > 0) {
                 List<String> cm = plugin.getMenuFile().getCancelMessage();
                 for (String s : Utils.c(cm)) {
                     player.sendMessage(s);
                 }
             }
-            PLAYER_SELLS.remove(player);
+            playerSells.remove(player.getUniqueId());
             player.playSound(player.getLocation(), plugin.getMenuFile().getCancelSound(), 1, 1);
         }
     }

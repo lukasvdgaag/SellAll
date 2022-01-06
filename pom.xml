@@ -6,7 +6,7 @@
 
     <groupId>net.gcnt</groupId>
     <artifactId>SellAll</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -14,48 +14,10 @@
         <maven.compiler.target>16</maven.compiler.target>
         <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <plugin-version>${project.version}</plugin-version>
     </properties>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <updatePomFile>true</updatePomFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>flatten</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>flatten</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>flatten.clean</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -69,7 +31,17 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>plugin.yml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
                 <filtering>false</filtering>
+                <excludes>
+                    <exclude>plugin.yml</exclude>
+                </excludes>
             </resource>
         </resources>
     </build>
@@ -97,6 +69,28 @@
             <version>1.17</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.Th0rgal</groupId>
+            <artifactId>Oraxen</artifactId>
+            <version>1.122.1</version>
+            <scope>system</scope>
+            <systemPath>C:/Users/gaagj/OneDrive/SellAll/lib/oraxen-1.122.1-all.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>io.lumine</groupId>
+            <artifactId>MMOItems</artifactId>
+            <version>6.6.5</version>
+            <scope>system</scope>
+            <systemPath>C:/Users/gaagj/OneDrive/SellAll/lib/MMOItems-6.6.5.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>io.lumine</groupId>
+            <artifactId>MythicLib</artifactId>
+            <version>1.2</version>
+            <scope>system</scope>
+            <systemPath>C:/Users/gaagj/OneDrive/SellAll/lib/MythicLib-1.2.jar</systemPath>
+        </dependency>
+
     </dependencies>
 
 </project>

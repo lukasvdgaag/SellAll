@@ -32,17 +32,18 @@ public abstract class YamlFile {
     }
 
     public void setup() {
-        if (file.exists()) return;
+        if (!file.exists()) {
 
-        if (hasResource) {
-            plugin.saveResource(fileName, false);
-        } else {
-            try {
-                if (!file.createNewFile()) {
-                    plugin.getLogger().severe("SellAll failed to create the " + fileName + " file.");
+            if (hasResource) {
+                plugin.saveResource(fileName, false);
+            } else {
+                try {
+                    if (!file.createNewFile()) {
+                        plugin.getLogger().severe("SellAll failed to create the " + fileName + " file.");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         conf = YamlConfiguration.loadConfiguration(file);

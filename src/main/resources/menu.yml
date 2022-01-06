@@ -39,7 +39,7 @@ sell-menu:
   sell_message:
     - '&8&m--------------------------------------------'
     - '&aThanks for the sale, &b%player%!'
-    - '&7You earned: &b%earned% SBDollars'
+    - '&7Total worth: &b%totalworth% SBDollars'
     - '&7Taxes: %tax_percentage%% (%tax_amount% SBDollars)'
     - '&aA net amount of $%net% has been added to your account!'
     - '&8&m--------------------------------------------'

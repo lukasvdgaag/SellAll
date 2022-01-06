@@ -2,7 +2,6 @@ package net.gcnt.sellall.files;
 
 import com.google.common.collect.Lists;
 import net.gcnt.sellall.SellAll;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -14,89 +13,67 @@ import java.util.Objects;
 
 public class MenuFile extends YamlFile {
 
-    private String sellMenuTitle = "&8&lSell All";
+    private String sellMenuTitle;
 
-    private Material itemWorthOpenMaterial = Material.CHEST;
-    private String itemWorthOpenDisplayName = "&e&lWorth item List";
-    private List<String> itemWorthOpenLore = Lists.newArrayList("" +
-                    ChatColor.translateAlternateColorCodes('&', "&8-----------------------------------"),
-            " ",
-            ChatColor.translateAlternateColorCodes('&', "       &f&lClick&7 to Open Worth Item List"),
-            " ",
-            ChatColor.translateAlternateColorCodes('&', "&8-----------------------------------"));
+    private Material itemWorthOpenMaterial;
+    private String itemWorthOpenDisplayName;
+    private List<String> itemWorthOpenLore;
 
-    private Material infoMaterial = Material.BOOK;
-    private String infoDisplayName = "&eHow to sell your items";
-    private List<String> infoLore = Lists.newArrayList(
-            ChatColor.GRAY + "Click an item in your inventory to add it",
-            ChatColor.GRAY + "to the sell menu. If you think you're ready,",
-            ChatColor.GRAY + "click the " + ChatColor.GREEN + "slime ball" + ChatColor.GRAY + " to sell the items.");
+    private Material infoMaterial;
+    private String infoDisplayName;
+    private List<String> infoLore;
 
-    private Material fillMaterial = Material.BLUE_STAINED_GLASS_PANE;
+    private Material fillMaterial;
 
-    private Material noItemAddedMaterial = Material.BLACK_STAINED_GLASS_PANE;
-    private String noItemAddedDisplayName = "&cNo item";
-    private List<String> noItemAddedLore = Lists.newArrayList();
+    private Material noItemAddedMaterial;
+    private String noItemAddedDisplayName;
+    private List<String> noItemAddedLore;
 
-    private Material itemAddedMaterial = Material.GREEN_STAINED_GLASS_PANE;
-    private String itemAddedDisplayName = "&a&lFilled";
-    private List<String> itemAddedLore = Lists.newArrayList("" +
-                    ChatColor.translateAlternateColorCodes('&', "&7+----------------------------------+"),
-            " ",
-            ChatColor.translateAlternateColorCodes('&', "       &b&lWorth: &f&l$%worth%"),
-            " ",
-            ChatColor.translateAlternateColorCodes('&', "&8+----------------------------------+"));
+    private Material itemAddedMaterial;
+    private String itemAddedDisplayName;
+    private List<String> itemAddedLore;
 
-    private Material cancelMaterial = Material.BARRIER;
-    private String cancelDisplayName = "&cCancel Sell All";
-    private List<String> cancelLore = Lists.newArrayList(ChatColor.GRAY + "Cancel the selling of your items");
+    private Material cancelMaterial;
+    private String cancelDisplayName;
+    private List<String> cancelLore;
 
-    private Material proceedMaterial = Material.SLIME_BALL;
-    private String proceedDisplayName = "&aSell the items";
-    private List<String> proceedLore = Lists.newArrayList(ChatColor.GRAY + "Ready to sell your items?",
-            ChatColor.GRAY + "Click this item to proceed your selling.",
-            " ",
-            ChatColor.AQUA + "Worth: " + ChatColor.GREEN + "$%totalworth%",
-            ChatColor.RED + "Tax: " + ChatColor.GRAY + "$%tax_amount% (%tax_percentage%%)");
+    private Material proceedMaterial;
+    private String proceedDisplayName;
+    private List<String> proceedLore;
 
-    private Sound invalidItemSound = Sound.ENTITY_VILLAGER_NO;
-    private Sound menuOpenSound = Sound.BLOCK_ENDER_CHEST_OPEN;
-    private Sound sellSound = Sound.ENTITY_VILLAGER_TRADE;
-    private Sound cancelSound = Sound.BLOCK_BEEHIVE_EXIT;
-    private Sound itemAddSound = Sound.BLOCK_NOTE_BLOCK_PLING;
-    private Sound itemRemoveSound = Sound.ENTITY_ITEM_FRAME_REMOVE_ITEM;
+    private Sound invalidItemSound;
+    private Sound menuOpenSound;
+    private Sound sellSound;
+    private Sound cancelSound;
+    private Sound itemAddSound;
+    private Sound itemRemoveSound;
 
-    private List<String> sellMessage = Lists.newArrayList("&8--------------------------------------------",
-            "&aThanks for the sale, &e%player%!",
-            "&7You earned: &b%earned% SBDollars",
-            "&7Taxes: %tax_percentage%% (%tax_amount% SBDollars)",
-            "&8--------------------------------------------");
-    private List<String> cancelMessage = Lists.newArrayList("&cYou cancelled your item selling!",
-            "&7All items have been returned to your inventory.");
+    private List<String> sellMessage;
+    private List<String> cancelMessage;
 
 
     ///////////////////
 
-    private String itemListMenuTitle = "&8&lSell All";
+    private String itemListMenuTitle;
 
-    private Material itemListMaterial = Material.BOOK;
-    private String itemListDisplayName = "&aSell All Menu";
-    private List<String> itemListLore = Lists.newArrayList("&7Click here to return to the sell menu");
+    private Material itemListMaterial;
+    private String itemListDisplayName;
+    private List<String> itemListLore;
 
-    private Material nextPageMaterial = Material.PAPER;
-    private String nextPageDisplayName = "&bNext page";
-    private List<String> nextPageLore = Lists.newArrayList("&7Click to go to page %page%");
+    private Material nextPageMaterial;
+    private String nextPageDisplayName;
+    private List<String> nextPageLore;
 
-    private Material previousPageMaterial = Material.PAPER;
-    private String previousPageDisplayName = "&bPrevious page";
-    private List<String> previousPageLore = Lists.newArrayList("&7Click to go to page %page%");
+    private Material previousPageMaterial;
+    private String previousPageDisplayName;
+    private List<String> previousPageLore;
 
-    private Material itemListFillMaterial = Material.BLUE_STAINED_GLASS_PANE;
+    private Material itemListFillMaterial;
 
-    private List<String> itemListItemLore = Lists.newArrayList(ChatColor.GRAY + "Worth: " + ChatColor.AQUA + "$%worth%");
+    private List<String> itemListItemLore;
 
-    private Sound nextPageSound = Sound.ENTITY_ITEM_FRAME_REMOVE_ITEM;
-    private Sound previousPageSound = Sound.ENTITY_ITEM_FRAME_REMOVE_ITEM;
+    private Sound nextPageSound;
+    private Sound previousPageSound;
 
 
     public MenuFile(SellAll plugin) {
@@ -198,11 +175,11 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getSellMessage() {
-        return sellMessage;
+        return Lists.newArrayList(sellMessage);
     }
 
     public List<String> getCancelMessage() {
-        return cancelMessage;
+        return Lists.newArrayList(cancelMessage);
     }
 
     public Sound getCancelSound() {
@@ -234,7 +211,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getItemWorthOpenLore() {
-        return itemWorthOpenLore;
+        return Lists.newArrayList(itemWorthOpenLore);
     }
 
     public Material getInfoMaterial() {
@@ -246,7 +223,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getInfoLore() {
-        return infoLore;
+        return Lists.newArrayList(infoLore);
     }
 
     public Material getProceedMaterial() {
@@ -258,7 +235,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getProceedLore() {
-        return proceedLore;
+        return Lists.newArrayList(proceedLore);
     }
 
     public Material getFillMaterial() {
@@ -274,7 +251,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getNoItemAddedLore() {
-        return noItemAddedLore;
+        return Lists.newArrayList(noItemAddedLore);
     }
 
     public Material getItemAddedMaterial() {
@@ -286,7 +263,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getItemAddedLore() {
-        return itemAddedLore;
+        return Lists.newArrayList(itemAddedLore);
     }
 
     public Material getCancelMaterial() {
@@ -298,11 +275,11 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getCancelLore() {
-        return cancelLore;
+        return Lists.newArrayList(cancelLore);
     }
 
     public List<String> getItemListItemLore() {
-        return itemListItemLore;
+        return Lists.newArrayList(itemListItemLore);
     }
 
     public String getItemListMenuTitle() {
@@ -318,7 +295,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getItemListLore() {
-        return itemListLore;
+        return Lists.newArrayList(itemListLore);
     }
 
     public Material getNextPageMaterial() {
@@ -330,7 +307,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getNextPageLore() {
-        return nextPageLore;
+        return Lists.newArrayList(nextPageLore);
     }
 
     public Material getPreviousPageMaterial() {
@@ -342,7 +319,7 @@ public class MenuFile extends YamlFile {
     }
 
     public List<String> getPreviousPageLore() {
-        return previousPageLore;
+        return Lists.newArrayList(previousPageLore);
     }
 
     public Material getItemListFillMaterial() {

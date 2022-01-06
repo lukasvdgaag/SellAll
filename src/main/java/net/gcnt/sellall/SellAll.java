@@ -3,7 +3,7 @@ package net.gcnt.sellall;
 import net.gcnt.sellall.commands.SellAllCmd;
 import net.gcnt.sellall.files.config.Config;
 import net.gcnt.sellall.files.MenuFile;
-import net.gcnt.sellall.files.itemworths.ItemFile;
+import net.gcnt.sellall.files.ItemFile;
 import net.gcnt.sellall.files.logs.Log;
 import net.gcnt.sellall.menus.ItemListMenu;
 import net.gcnt.sellall.menus.SellMenu;
