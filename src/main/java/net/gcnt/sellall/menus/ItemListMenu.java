@@ -102,6 +102,7 @@ public class ItemListMenu extends Menu implements Listener {
 
         Player player = (Player) e.getWhoClicked();
         if (!inMenus.containsKey(player.getUniqueId())) return;
+        if (!e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getItemListMenuTitle()))) return;
 
         e.setCancelled(true);
 

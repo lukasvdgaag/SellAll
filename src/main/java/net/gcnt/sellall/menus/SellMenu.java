@@ -130,6 +130,7 @@ public class SellMenu extends Menu implements Listener {
 
         if (e.getClickedInventory() == null) return;
         if (!playerSells.containsKey(player.getUniqueId())) return;
+        if (!e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getSellMenuTitle()))) return;
         // player is in the menu
         e.setCancelled(true);
         if (playerCancelClose.contains(player.getUniqueId())) return;
