@@ -254,15 +254,15 @@ public class SellMenu extends Menu implements Listener {
     private void addSellItem(boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {
         int amount = currentItem.getAmount();
         boolean yes = false;
+        Item current = Item.fromMaterial(plugin.getItemFile(), currentItem);
+
         if (!shiftClick) {
             // only add one
 
             for (ItemStack it : items) {
-                if (it.getType() == currentItem.getType() && it.getAmount() < it.getMaxStackSize()) {
-                    int index = items.indexOf(it);
-                    ItemStack i = items.get(index);
-                    i.setAmount(i.getAmount() + 1);
-                    items.set(index, i);
+                Item item = Item.fromMaterial(plugin.getItemFile(), it);
+                if (item.equals(current) && it.getAmount() < it.getMaxStackSize()) {
+                    it.setAmount(it.getAmount()+1);
                     yes = true;
                     break;
                 }
@@ -285,19 +285,16 @@ public class SellMenu extends Menu implements Listener {
 
         } else {
             for (ItemStack it : items) {
-                if (it.getType() == currentItem.getType() && it.getAmount() < it.getMaxStackSize()) {
-                    int index = items.indexOf(it);
-                    ItemStack i = items.get(index);
-                    if (i.getAmount() + amount <= it.getMaxStackSize()) {
-                        i.setAmount(i.getAmount() + amount);
+                Item item = Item.fromMaterial(plugin.getItemFile(), it);
+                if (item.equals(current) && it.getAmount() < it.getMaxStackSize()) {
+                    if (it.getAmount() + amount <= it.getMaxStackSize()) {
+                        it.setAmount(it.getAmount() + amount);
                         amount = 0;
-                        items.set(index, i);
                         yes = true;
                         break;
                     } else {
-                        int min = i.getMaxStackSize() - i.getAmount();
-                        i.setAmount(i.getMaxStackSize());
-                        items.set(index, i);
+                        int min = it.getMaxStackSize() - it.getAmount();
+                        it.setAmount(it.getMaxStackSize());
                         amount = amount - min;
                     }
                     break;

@@ -100,4 +100,22 @@ public class Item {
         };
     }
 
+    public int getAmount(ItemStack item) {
+        return switch (type) {
+            case BUKKIT -> item.getType().equals(item.getType()) ? item.getAmount() : 0;
+            case ORAXEN -> {
+                String idRes = OraxenItems.getIdByItem(item);
+                if (idRes != null && idRes.equals(externalId)) yield item.getAmount();
+                else yield 0;
+            }
+            case MMO -> {
+                String idRes = MMOItems.getID(item);
+                Type typeRes = MMOItems.getType(item);
+                if (idRes != null && idRes.equals(externalId) && typeRes != null && typeRes.getId().equals(externalType)) yield item.getAmount();
+                else yield 0;
+            }
+        };
+    }
+
+
 }
