@@ -16,7 +16,10 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public class SellMenu extends Menu implements Listener {
 
@@ -36,9 +39,8 @@ public class SellMenu extends Menu implements Listener {
             19, 20, 21, 22, 23, 24, 25,
             37, 38, 39, 40, 41, 42, 43
     );
-
-    private final HashMap<UUID, List<ItemStack>> playerSells;
     public final List<UUID> playerCancelClose;
+    private final HashMap<UUID, List<ItemStack>> playerSells;
 
     public SellMenu(SellAll plugin) {
         super(plugin);
@@ -124,6 +126,63 @@ public class SellMenu extends Menu implements Listener {
         playerSells.put(player.getUniqueId(), currentAdded);
     }
 
+    private void handleTopInventory(InventoryClickEvent e, Player player) {
+        switch (e.getSlot()) {
+            case 4 -> {
+                playerCancelClose.add(player.getUniqueId());
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    plugin.getItemListMenu().openMenu(player, true, 1);
+                    playerCancelClose.remove(player.getUniqueId());
+                }, 2);
+
+            }
+            case 9 -> {
+                final Location location = player.getLocation().getBlock().getLocation();
+                player.getInventory().addItem(playerSells.get(player.getUniqueId()).toArray(new ItemStack[]{}))
+                        .forEach((integer, itemStack) ->
+                                player.getWorld().dropItem(location.add(0.5, 0.25, 0.5), itemStack)
+                        );
+                playerSells.remove(player.getUniqueId());
+                player.closeInventory();
+            }
+            case 49 -> {
+                if (playerSells.get(player.getUniqueId()).size() > 0) {
+                    sellItems(player);
+                } else {
+                    player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
+                }
+            }
+            default -> {
+                if (ITEM_SELL_SLOTS.contains(e.getSlot()) && e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
+                    removeSellItems(player, e.isShiftClick(), e.getCurrentItem());
+                    loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
+                }
+            }
+        }
+    }
+
+    private void handleBottomInventory(InventoryClickEvent e, Player player) {
+        if (e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR) return;
+
+        List<ItemStack> items = playerSells.get(player.getUniqueId());
+
+        Item item = Item.fromMaterial(plugin.getItemFile(), e.getCurrentItem());
+        if (item == null) {
+            player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
+            return;
+        }
+
+        if (items.size() < ITEM_SELL_SLOTS.size()) {
+            addSellItem(e.isShiftClick(), e.getCurrentItem(), items, e);
+
+            playerSells.put(player.getUniqueId(), items);
+            playerCancelClose.add(player.getUniqueId());
+            player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
+            loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
+            playerCancelClose.remove(player.getUniqueId());
+        }
+    }
+
     @EventHandler
     public void onClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
@@ -137,60 +196,10 @@ public class SellMenu extends Menu implements Listener {
 
         if (e.getClickedInventory().equals(e.getView().getTopInventory())) {
             // click top inventory
-            switch (e.getSlot()) {
-                case 4 -> {
-                    playerCancelClose.add(player.getUniqueId());
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                        plugin.getItemListMenu().openMenu(player, true, 1);
-                        playerCancelClose.remove(player.getUniqueId());
-                    }, 2);
-
-                }
-                case 9 -> {
-                    final Location location = player.getLocation().getBlock().getLocation();
-                    player.getInventory().addItem(playerSells.get(player.getUniqueId()).toArray(new ItemStack[]{}))
-                            .forEach((integer, itemStack) ->
-                                    player.getWorld().dropItem(location.add(0.5, 0.25, 0.5), itemStack)
-                            );
-                    playerSells.remove(player.getUniqueId());
-                    player.closeInventory();
-                }
-                case 49 -> {
-                    if (playerSells.get(player.getUniqueId()).size() > 0) {
-                        sellItems(player);
-                    } else {
-                        player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
-                    }
-                }
-                default -> {
-                    if (ITEM_SELL_SLOTS.contains(e.getSlot()) && e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
-                        removeSellItems(player, e.isShiftClick(), e.getCurrentItem());
-                        loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
-                    }
-                }
-            }
-
+            handleTopInventory(e, player);
         } else {
             // clicked bottom inventory
-            if (e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR) return;
-
-            List<ItemStack> items = playerSells.get(player.getUniqueId());
-
-            Item item = Item.fromMaterial(plugin.getItemFile(), e.getCurrentItem());
-            if (item == null) {
-                player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
-                return;
-            }
-
-            if (items.size() < 14) {
-                addSellItem(e.isShiftClick(), e.getCurrentItem(), items, e);
-
-                playerSells.put(player.getUniqueId(), items);
-                playerCancelClose.add(player.getUniqueId());
-                player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
-                loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
-                playerCancelClose.remove(player.getUniqueId());
-            }
+            handleBottomInventory(e, player);
         }
     }
 
@@ -263,7 +272,7 @@ public class SellMenu extends Menu implements Listener {
             for (ItemStack it : items) {
                 Item item = Item.fromMaterial(plugin.getItemFile(), it);
                 if (item.equals(current) && it.getAmount() < it.getMaxStackSize()) {
-                    it.setAmount(it.getAmount()+1);
+                    it.setAmount(it.getAmount() + 1);
                     yes = true;
                     break;
                 }

@@ -55,17 +55,18 @@ public class Item {
         String oraxenId = OraxenItems.getIdByItem(input);
         String mmoId = MMOItems.getID(input);
         Type mmoType = MMOItems.getType(input);
+        if (mmoId!= null && mmoId.isEmpty()) mmoId = null;
 
         for (Item item : itemFile.getItems()) {
             switch (item.getType()) {
-                case BUKKIT -> {
-                    if (item.getItem().equals(input.getType()) && mmoId == null && oraxenId == null) return item;
-                }
                 case ORAXEN -> {
                     if (oraxenId != null && oraxenId.equals(item.getExternalId())) return item;
                 }
                 case MMO -> {
                     if (mmoId != null && mmoType != null && mmoType.getId().equals(item.getExternalType()) && mmoId.equals(item.getExternalId())) return item;
+                }
+                default -> {
+                    if (item.getItem().equals(input.getType()) && mmoId == null && oraxenId == null) return item;
                 }
             }
         }
