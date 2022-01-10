@@ -173,9 +173,8 @@ public class SellMenu extends Menu implements Listener {
         }
 
         if (items.size() < ITEM_SELL_SLOTS.size()) {
-            addSellItem(e.isShiftClick(), e.getCurrentItem(), items, e);
+            addSellItem(player, e.isShiftClick(), e.getCurrentItem(), items, e);
 
-            playerSells.put(player.getUniqueId(), items);
             playerCancelClose.add(player.getUniqueId());
             player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
             loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
@@ -261,7 +260,7 @@ public class SellMenu extends Menu implements Listener {
         player.playSound(player.getLocation(), plugin.getMenuFile().getItemRemoveSound(), 1, 1);
     }
 
-    private void addSellItem(boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {
+    private void addSellItem(Player player, boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {
         int amount = currentItem.getAmount();
         boolean yes = false;
         Item current = Item.fromMaterial(plugin.getItemFile(), currentItem);
@@ -279,9 +278,6 @@ public class SellMenu extends Menu implements Listener {
             }
 
             if (amount == 1) {
-                if (!yes) {
-                    items.add(currentItem);
-                }
                 e.setCurrentItem(null);
             } else {
                 currentItem.setAmount(amount - 1);
@@ -317,6 +313,7 @@ public class SellMenu extends Menu implements Listener {
             }
             e.setCurrentItem(null);
         }
+        playerSells.put(player.getUniqueId(), items);
     }
 
     @EventHandler
