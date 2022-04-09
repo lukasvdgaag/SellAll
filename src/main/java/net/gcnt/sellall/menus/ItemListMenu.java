@@ -98,7 +98,7 @@ public class ItemListMenu extends Menu implements Listener {
 
     @EventHandler
     public void onClick(InventoryClickEvent e) {
-        if (e.getClickedInventory() == null) return;
+        if (e.getInventory() == null) return;
 
         Player player = (Player) e.getWhoClicked();
         if (!inMenus.containsKey(player.getUniqueId())) return;
@@ -106,7 +106,7 @@ public class ItemListMenu extends Menu implements Listener {
 
         e.setCancelled(true);
 
-        if (!e.getClickedInventory().equals(e.getView().getTopInventory())) return;
+        if (!e.getInventory().equals(e.getView().getTopInventory())) return;
 
         switch (e.getSlot()) {
             case 4 -> {

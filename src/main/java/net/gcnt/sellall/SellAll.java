@@ -5,6 +5,7 @@ import net.gcnt.sellall.files.config.Config;
 import net.gcnt.sellall.files.MenuFile;
 import net.gcnt.sellall.files.ItemFile;
 import net.gcnt.sellall.files.logs.Log;
+import net.gcnt.sellall.files.logs.MySQLLog;
 import net.gcnt.sellall.menus.ItemListMenu;
 import net.gcnt.sellall.menus.SellMenu;
 import net.gcnt.sellall.utils.Utils;
@@ -30,6 +31,7 @@ public class SellAll extends JavaPlugin implements Listener {
 
     private ItemListMenu itemListMenu;
     private SellMenu sellMenu;
+    private MySQLLog mySQLLog;
 
     public ItemFile getItemFile() {
         return itemFile;
@@ -63,6 +65,10 @@ public class SellAll extends JavaPlugin implements Listener {
         return economy;
     }
 
+    public MySQLLog getMySQLLog() {
+        return mySQLLog;
+    }
+
     @Override
     public void onEnable() {
         if (setupEconomy()) {
@@ -79,6 +85,7 @@ public class SellAll extends JavaPlugin implements Listener {
         this.config = new Config(this);
         this.log = new Log(this);
         this.utils = new Utils(this);
+        this.mySQLLog = new MySQLLog(this);
 
         this.itemListMenu = new ItemListMenu(this);
         Bukkit.getPluginManager().registerEvents(this.itemListMenu, this);

@@ -25,7 +25,7 @@ public class ItemFile extends YamlFile {
 
         for (String item : conf.getKeys(false)) {
             try {
-                items.add(new Item(item, conf.getDouble(item + ".worth", 0)));
+                items.add(new Item(item, conf.getDouble(item + ".worth", 0), conf.getInt(item + ".max_sells", -1)));
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -2,8 +2,11 @@ package net.gcnt.sellall.utils;
 
 import com.google.common.collect.Lists;
 import net.gcnt.sellall.SellAll;
+import net.minecraft.nbt.CompoundTag;
 import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +40,15 @@ public record Utils(SellAll plugin) {
         }
 
         return 0;
+    }
+
+    public static boolean hasNBTTag(ItemStack item) {
+        net.minecraft.world.item.ItemStack a = CraftItemStack.asNMSCopy(item);
+        if (a.hasTag()) {
+            CompoundTag b = a.getTag();
+            return (b != null && !b.isEmpty());
+        }
+        return false;
     }
 
 }

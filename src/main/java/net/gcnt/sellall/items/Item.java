@@ -4,19 +4,24 @@ import io.th0rgal.oraxen.items.OraxenItems;
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import net.gcnt.sellall.files.ItemFile;
+import net.gcnt.sellall.utils.Utils;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 public class Item {
 
+    private final String id;
     private final Material item;
     private final double sellWorth;
     private final ItemType type;
     private final String externalId;
     private String externalType;
+    private int maxDailySells;
 
-    public Item(String item, double sellWorth) {
+    public Item(String item, double sellWorth, int maxDailySells) {
+        this.id = item;
         this.sellWorth = sellWorth;
+        this.maxDailySells = maxDailySells;
         if (item.startsWith("MMO-")) {
             this.item = null;
             this.type = ItemType.MMO;
@@ -56,6 +61,7 @@ public class Item {
         String mmoId = MMOItems.getID(input);
         Type mmoType = MMOItems.getType(input);
         if (mmoId!= null && mmoId.isEmpty()) mmoId = null;
+        boolean hasNBT = Utils.hasNBTTag(input);
 
         for (Item item : itemFile.getItems()) {
             switch (item.getType()) {
@@ -66,11 +72,15 @@ public class Item {
                     if (mmoId != null && mmoType != null && mmoType.getId().equals(item.getExternalType()) && mmoId.equals(item.getExternalId())) return item;
                 }
                 default -> {
-                    if (item.getItem().equals(input.getType()) && mmoId == null && oraxenId == null) return item;
+                    if (item.getItem().equals(input.getType()) && mmoId == null && oraxenId == null && !hasNBT) return item;
                 }
             }
         }
         return null;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public Material getItem() {
@@ -83,6 +93,10 @@ public class Item {
 
     public String getExternalType() {
         return externalType;
+    }
+
+    public int getMaxDailySells() {
+        return maxDailySells;
     }
 
     public double getSellWorth() {

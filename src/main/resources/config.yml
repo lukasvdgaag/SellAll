@@ -10,6 +10,13 @@ tax-permissions:
   sellall-tax-80: 80
   sellall-tax-90: 90
 
+mysql:
+  host: localhost
+  port: 3306
+  database: minecraft
+  username: root
+  password: password
+
 no_permission_message: '&cYou are not allowed to do this!'
 reload_message: '&aReloaded the plugin!'
 invalid_player_message: '&cThere is no player with that name!'
