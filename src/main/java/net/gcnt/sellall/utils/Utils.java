@@ -13,6 +13,20 @@ import java.util.List;
 
 public record Utils(SellAll plugin) {
 
+    private static List<String> itemNBTTags = Lists.newArrayList(
+            "Enchantments",
+            "display",
+            "Name",
+            "Lore",
+            "Damage",
+            "color",
+            "Unbreakable",
+            "RepairCost",
+            "CanDestroy",
+            "CanPlaceOn",
+            "HideFlags"
+    );
+
     public static String c(String s) {
         return ChatColor.translateAlternateColorCodes('&', s);
     }
@@ -46,7 +60,12 @@ public record Utils(SellAll plugin) {
         net.minecraft.world.item.ItemStack a = CraftItemStack.asNMSCopy(item);
         if (a.hasTag()) {
             CompoundTag b = a.getTag();
-            return (b != null && !b.isEmpty());
+
+            if (b != null) {
+                for (String key : b.getAllKeys()) {
+                    if (!itemNBTTags.contains(key)) return true;
+                }
+            }
         }
         return false;
     }

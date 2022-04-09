@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -387,6 +388,16 @@ public class SellMenu extends Menu implements Listener {
 
         for (ItemStack item : playerSells.get(player.getUniqueId())) {
             player.getInventory().addItem(item);
+        }
+    }
+
+    @EventHandler
+    public void onChat(AsyncPlayerChatEvent e) {
+        if (e.getMessage().equalsIgnoreCase("lol")) {
+            e.setCancelled(true);
+            final ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
+            Utils.hasNBTTag(item);
+            e.getPlayer().sendMessage(item.toString());
         }
     }
 
