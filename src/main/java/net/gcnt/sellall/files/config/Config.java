@@ -12,10 +12,12 @@ import java.util.HashMap;
 public class Config extends YamlFile {
 
     private final HashMap<String, Integer> taxes; // permission - tax rate
+    private final HashMap<Integer, Double> worthTiers; // tier - worth
 
     public Config(SellAll plugin) {
         super(plugin, "config.yml", true);
         this.taxes = new HashMap<>();
+        this.worthTiers = new HashMap<>();
         setup();
         loadData();
     }
@@ -41,6 +43,19 @@ public class Config extends YamlFile {
                 }
             }
         }
+
+        if (conf.contains(ConfigProperties.WORTH_TIERS)) {
+            ConfigurationSection section = conf.getConfigurationSection(ConfigProperties.WORTH_TIERS);
+            assert section != null;
+            for (String tier : section.getKeys(false)) {
+                double worth = section.getDouble(tier) / 100;
+                worthTiers.put(Integer.parseInt(tier), worth);
+            }
+        }
+    }
+
+    public HashMap<Integer, Double> getWorthTiers() {
+        return worthTiers;
     }
 
     public HashMap<String, Integer> getTaxes() {

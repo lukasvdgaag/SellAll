@@ -52,15 +52,15 @@ public class MySQLLog {
                       PRIMARY KEY (`id`)
                     );""");
         } catch (SQLException e) {
-            plugin.getLogger().severe("StreakRewards caught an error while executing a MySQL statement.");
+            plugin.getLogger().severe("SellAll caught an error while executing a MySQL statement.");
             e.printStackTrace();
         }
     }
 
-    public void logSell(UUID player, ItemType type, String material, int amount, double price, double tax) {
+    public void logSell(PlayerLog log, ItemType type, String material, int amount, double price, double tax) {
         try (Connection connection = getConnection()) {
             PreparedStatement statement = connection.prepareStatement("INSERT INTO sellall_logs(player, material_type, material, amount, price, tax) VALUES (?, ?, ?, ?, ?, ?)");
-            statement.setString(1, player.toString());
+            statement.setString(1, log.getUuid().toString());
             statement.setString(2, type.name());
             statement.setString(3, material);
             statement.setInt(4, amount);
@@ -68,18 +68,20 @@ public class MySQLLog {
             statement.setDouble(6, tax);
             statement.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().severe("StreakRewards caught an error while executing a MySQL statement.");
+            plugin.getLogger().severe("SellAll caught an error while executing a MySQL statement.");
             e.printStackTrace();
         }
     }
 
-    public int getSellsLeft(UUID player, Item item) {
-        if (item == null || item.getMaxDailySells() <= 0) return -1;
-
-        int sold = getSellCount(player, item);
-        return Math.max(0, item.getMaxDailySells() - sold);
-    }
-
+    /**
+     * Get the amount of items sold by a player in the last 24 hours.
+     *
+     * @param player The player to get the sell count for.
+     * @param item   The item to get the sell count for.
+     * @return The amount of times the player has sold the item
+     * @deprecated Use {@link PlayerLog#getSellCount(Item)} instead.
+     */
+    @Deprecated
     public int getSellCount(UUID player, Item item) {
         try (Connection connection = getConnection()) {
             PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount) FROM sellall_logs WHERE player = ? AND material_type = ? AND material = ? AND date > now() - interval 24 hour");
@@ -90,10 +92,38 @@ public class MySQLLog {
             final ResultSet resultSet = statement.executeQuery();
             return (resultSet.next()) ? resultSet.getInt(1) : 0;
         } catch (SQLException e) {
-            plugin.getLogger().severe("StreakRewards caught an error while executing a MySQL statement.");
+            plugin.getLogger().severe("SellAll caught an error while executing a MySQL statement.");
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public void initializeLogs(PlayerLog log) {
+        log.clear();
+        try (Connection connection = getConnection()) {
+            PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount) AS amount, material_type, material FROM sellall_logs WHERE player = ? AND date > now() - interval 24 hour");
+            statement.setString(1, log.getUuid().toString());
+
+            final ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                int amount = resultSet.getInt("amount");
+                ItemType type = ItemType.valueOf(resultSet.getString("material_type"));
+                String material = resultSet.getString("material");
+
+                String id = type == ItemType.BUKKIT ? material : type.name() + "-" + material;
+
+                Item item = Item.fromId(plugin.getItemFile(), id);
+                if (item == null) {
+                    plugin.getLogger().warning("SellAll could not find an item with id " + id + " in the item file.");
+                    continue;
+                }
+
+                log.setSellCount(item, amount);
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().severe("SellAll caught an error while executing a MySQL statement.");
+        }
     }
 
 }

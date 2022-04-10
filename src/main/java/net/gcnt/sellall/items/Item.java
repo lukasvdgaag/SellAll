@@ -79,6 +79,15 @@ public class Item {
         return null;
     }
 
+    public static Item fromId(ItemFile itemFile, String id) {
+        if (id == null) return null;
+
+        for (Item item : itemFile.getItems()) {
+            if (item.getId().equals(id)) return item;
+        }
+        return null;
+    }
+
     public String getId() {
         return id;
     }

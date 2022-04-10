@@ -3,6 +3,7 @@ package net.gcnt.sellall.menus;
 import com.google.common.collect.Lists;
 import net.gcnt.sellall.SellAll;
 import net.gcnt.sellall.files.MenuFile;
+import net.gcnt.sellall.files.logs.PlayerLog;
 import net.gcnt.sellall.items.Item;
 import net.gcnt.sellall.items.ItemType;
 import net.gcnt.sellall.utils.Utils;
@@ -16,6 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -61,6 +63,8 @@ public class SellMenu extends Menu implements Listener {
         player.openInventory(gui);
         playerCancelClose.remove(player.getUniqueId());
         loadItems(player, gui, mf);
+        // loading player sells
+        PlayerLog.getPlayerLog(plugin, player.getUniqueId());
     }
 
     public void loadItems(Player player, Inventory gui, MenuFile mf) {
@@ -179,7 +183,6 @@ public class SellMenu extends Menu implements Listener {
             addSellItem(player, e.isShiftClick(), e.getCurrentItem(), items, e);
 
             playerCancelClose.add(player.getUniqueId());
-            player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
             loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
             playerCancelClose.remove(player.getUniqueId());
         }
@@ -212,29 +215,19 @@ public class SellMenu extends Menu implements Listener {
 
         List<ItemStack> sold = Lists.newArrayList();
 
-        List<ItemStack> leftItems = new ArrayList<>();
+        PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
 
         for (ItemStack item : playerSells.get(player.getUniqueId())) {
             Item ci = Item.fromMaterial(plugin.getItemFile(), item);
             if (ci != null) {
-                int sellsLeft = plugin.getMySQLLog().getSellsLeft(player.getUniqueId(), ci);
-                if (sellsLeft == -1) sellsLeft = item.getAmount();
+                final double itemWorth = ci.getSellWorth() * item.getAmount();
+                totalWorth += itemWorth;
+                sold.add(item);
 
-                int toSell = Math.min(sellsLeft, item.getAmount());
+                String material = ci.getType() == ItemType.BUKKIT ? item.getType().toString() : ci.getExternalId();
 
-                ItemStack clonedItem = item.clone();
-                clonedItem.setAmount(clonedItem.getAmount() - toSell);
-
-                if (toSell > 0) {
-                    final double itemWorth = ci.getSellWorth() * item.getAmount();
-                    totalWorth += itemWorth;
-                    sold.add(clonedItem);
-
-                    String material = ci.getType() == ItemType.BUKKIT ? item.getType().toString() : ci.getExternalId();
-                    plugin.getMySQLLog().logSell(player.getUniqueId(), ci.getType(), material, toSell, ci.getSellWorth(), taxPercentage);
-                }
-
-                if (clonedItem.getAmount() > 0) leftItems.add(clonedItem);
+                plugin.getMySQLLog().logSell(log, ci.getType(), material, item.getAmount(), ci.getSellWorth(), taxPercentage);
+                log.setSellCount(ci, log.getSellCount(ci) + item.getAmount());
             }
         }
 
@@ -244,11 +237,6 @@ public class SellMenu extends Menu implements Listener {
 
         plugin.getLog().log(player, sold, tax);
         plugin.getEconomy().depositPlayer(Bukkit.getOfflinePlayer(player.getUniqueId()), earned);
-
-        for (ItemStack item : leftItems) {
-            player.getInventory().addItem(item).forEach((i, item1) -> player.getWorld().dropItem(player.getLocation(), item1));
-        }
-        leftItems.clear();
 
         playerCancelClose.add(player.getUniqueId());
         player.closeInventory();
@@ -338,8 +326,9 @@ public class SellMenu extends Menu implements Listener {
         if (current == null) return;
         int selling = shiftClick ? currentItem.getAmount() : 1;
 
+        PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
         if (current.getMaxDailySells() > -1) {
-            int sellsLeft = plugin.getMySQLLog().getSellsLeft(player.getUniqueId(), current);
+            int sellsLeft = log.getSellsLeft(current);
             int alreadyAdded = getCurrentSellingItemAmount(player, current);
 
             if (sellsLeft == -1) {
@@ -359,6 +348,7 @@ public class SellMenu extends Menu implements Listener {
             selling = min;
         }
 
+        player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
         addItem(player, current, currentItem, selling, items, e);
     }
 
@@ -399,6 +389,11 @@ public class SellMenu extends Menu implements Listener {
             Utils.hasNBTTag(item);
             e.getPlayer().sendMessage(item.toString());
         }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        PlayerLog.removePlayerLog(e.getPlayer().getUniqueId());
     }
 
 }

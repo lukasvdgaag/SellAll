@@ -13,7 +13,7 @@ import java.util.List;
 
 public record Utils(SellAll plugin) {
 
-    private static List<String> itemNBTTags = Lists.newArrayList(
+    private static final List<String> itemNBTTags = Lists.newArrayList(
             "Enchantments",
             "display",
             "Name",

@@ -10,6 +10,12 @@ tax-permissions:
   sellall-tax-80: 80
   sellall-tax-90: 90
 
+worth-tiers:
+  64: 75
+  96: 50
+  150: 25
+  250: 10
+
 mysql:
   host: localhost
   port: 3306
