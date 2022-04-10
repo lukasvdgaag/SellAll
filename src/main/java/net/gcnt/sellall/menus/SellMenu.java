@@ -68,6 +68,8 @@ public class SellMenu extends Menu implements Listener {
     }
 
     public void loadItems(Player player, Inventory gui, MenuFile mf) {
+        PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
+
         final ItemStack worthList = createItemStack(mf.getItemWorthOpenMaterial(), Utils.c(mf.getItemWorthOpenDisplayName()), Utils.c(mf.getItemWorthOpenLore()));
         gui.setItem(4, worthList);
 
@@ -78,6 +80,8 @@ public class SellMenu extends Menu implements Listener {
         for (int slot : GLASS_SLOTS) {
             gui.setItem(slot, glassFill);
         }
+
+        final HashMap<Item, Integer> soldItems = new HashMap<>();
 
         // clearing the item slots if not present.
         int curSize = 0;
@@ -97,37 +101,53 @@ public class SellMenu extends Menu implements Listener {
 
         List<ItemStack> currentAdded = playerSells.getOrDefault(player.getUniqueId(), Lists.newArrayList());
 
+        double totalWorth = 0;
+
         int current = 0;
         for (ItemStack cur : currentAdded) {
             if (current == 13) {
                 break;
             }
+            Item ci = Item.fromMaterial(plugin.getItemFile(), cur);
+            if (ci == null) continue; // highly unlikely
+
             gui.setItem(ITEM_SELL_SLOTS.get(current), cur);
 
-            double worth = 0;
-            Item ci = Item.fromMaterial(plugin.getItemFile(), cur);
+            final Integer currentSells = soldItems.getOrDefault(ci, log.getSellCount(ci));
+            final double worth = getWorth(ci, cur.getAmount(), currentSells);
 
-            if (ci != null) {
-                worth = ci.getSellWorth() * cur.getAmount();
-            }
+            soldItems.put(ci, currentSells + cur.getAmount());
+
             ItemStack filled = createItemStack(mf.getItemAddedMaterial(), Utils.c(mf.getItemAddedDisplayName()), Utils.c(Utils.replace(mf.getItemAddedLore(), "%worth%", worth + "")));
             gui.setItem(ITEM_DESCRIPTION_SLOTS.get(current), filled);
 
+            totalWorth += worth;
             current++;
         }
 
-        double totalWorth = 0;
         double taxAmount;
         double taxPercentage = plugin.getUtils().getTax(player);
-        for (ItemStack item : currentAdded) {
-            Item ci = Item.fromMaterial(plugin.getItemFile(), item);
-            if (ci != null) {
-                totalWorth += (ci.getSellWorth() * item.getAmount());
-            }
-        }
         taxAmount = (totalWorth * (taxPercentage / 100));
 
-        final ItemStack item = createItemStack(mf.getProceedMaterial(), Utils.c(mf.getProceedDisplayName()), Utils.c(Utils.replace(Utils.replace(Utils.replace(Utils.replace(mf.getProceedLore(), "%net%", String.format("%.2f", (totalWorth - taxAmount))), "%tax_percentage%", taxPercentage + ""), "%tax_amount%", String.format("%.2f", taxAmount)), "%totalworth%", String.format("%.2f", totalWorth))));
+        final ItemStack item = createItemStack(mf.getProceedMaterial(),
+                Utils.c(mf.getProceedDisplayName()),
+                Utils.c(
+                        Utils.replace(
+                                Utils.replace(
+                                        Utils.replace(
+                                                Utils.replace(
+                                                        mf.getProceedLore(),
+                                                        "%net%",
+                                                        String.format("%.2f", (totalWorth - taxAmount)))
+                                                ,
+                                                "%tax_percentage%",
+                                                taxPercentage + ""),
+                                        "%tax_amount%",
+                                        String.format("%.2f", taxAmount)),
+                                "%totalworth%",
+                                String.format("%.2f", totalWorth))
+                )
+        );
         gui.setItem(49, item);
 
         playerSells.put(player.getUniqueId(), currentAdded);
@@ -216,11 +236,15 @@ public class SellMenu extends Menu implements Listener {
         List<ItemStack> sold = Lists.newArrayList();
 
         PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
+        final HashMap<Item, Integer> soldItems = new HashMap<>();
 
         for (ItemStack item : playerSells.get(player.getUniqueId())) {
             Item ci = Item.fromMaterial(plugin.getItemFile(), item);
             if (ci != null) {
-                final double itemWorth = ci.getSellWorth() * item.getAmount();
+                final Integer currentSells = soldItems.getOrDefault(ci, log.getSellCount(ci));
+                final double itemWorth = getWorth(ci, item.getAmount(), currentSells);
+                soldItems.put(ci, currentSells + item.getAmount());
+
                 totalWorth += itemWorth;
                 sold.add(item);
 
@@ -318,6 +342,48 @@ public class SellMenu extends Menu implements Listener {
         }
 
         playerSells.put(player.getUniqueId(), items);
+    }
+
+    private int getTierIndex(int amountSold) {
+        int tierIndex = 0;
+        final Integer[] tiers = plugin.getCfg().getWorthTiers().keySet().toArray(new Integer[0]);
+        for (int i = 0; i < tiers.length; i++) {
+            if (amountSold >= tiers[i]) {
+                tierIndex = i;
+            }
+        }
+        return tierIndex;
+    }
+
+    private double getWorth(Item item, int amount, int amountSold) {
+        double worth = 0;
+
+        int tierIndex = getTierIndex(amountSold);
+        final Integer[] tiers = plugin.getCfg().getWorthTiers().keySet().toArray(new Integer[0]);
+
+        for (int i = tierIndex; i < tiers.length; i++) {
+            if (amount <= 0) break;
+
+            int currentTier = tiers[i];
+            int nextTier = i >= tiers.length - 1 ? currentTier : tiers[i + 1];
+            double tierWorth = plugin.getCfg().getWorthTiers().get(currentTier);
+
+            final int total = amountSold + amount;
+            if (i == nextTier || total <= nextTier) {
+                // reached the end of the tiers
+                worth += amount * item.getSellWorth() * tierWorth;
+                break;
+            } else {
+                // amount sold + amount is greater than the next tier
+                int toSell = nextTier - amountSold;
+
+                worth += toSell * item.getSellWorth() * tierWorth;
+                amount -= toSell;
+                amountSold += toSell;
+            }
+        }
+
+        return worth;
     }
 
     private void addSellItem(Player player, boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {

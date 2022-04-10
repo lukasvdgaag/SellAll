@@ -44,18 +44,6 @@ public record Utils(SellAll plugin) {
         return list;
     }
 
-    public int getTax(Player player) {
-        HashMap<String, Integer> taxes = plugin.getCfg().getTaxes();
-
-        for (String s : taxes.keySet()) {
-            if (player.hasPermission(s)) {
-                return taxes.get(s);
-            }
-        }
-
-        return 0;
-    }
-
     public static boolean hasNBTTag(ItemStack item) {
         net.minecraft.world.item.ItemStack a = CraftItemStack.asNMSCopy(item);
         if (a.hasTag()) {
@@ -68,6 +56,18 @@ public record Utils(SellAll plugin) {
             }
         }
         return false;
+    }
+
+    public int getTax(Player player) {
+        HashMap<String, Integer> taxes = plugin.getCfg().getTaxes();
+
+        for (String s : taxes.keySet()) {
+            if (player.hasPermission(s)) {
+                return taxes.get(s);
+            }
+        }
+
+        return 0;
     }
 
 }

@@ -14,8 +14,8 @@ import java.util.UUID;
 
 public class MySQLLog {
 
-    private HikariDataSource ds;
     private final SellAll plugin;
+    private HikariDataSource ds;
 
     public MySQLLog(SellAll plugin) {
         this.plugin = plugin;
@@ -101,7 +101,7 @@ public class MySQLLog {
     public void initializeLogs(PlayerLog log) {
         log.clear();
         try (Connection connection = getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount) AS amount, material_type, material FROM sellall_logs WHERE player = ? AND date > now() - interval 24 hour");
+            PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount) AS amount, material_type, material FROM sellall_logs WHERE player = ? AND date > now() - interval 24 hour GROUP BY material_type, material ");
             statement.setString(1, log.getUuid().toString());
 
             final ResultSet resultSet = statement.executeQuery();

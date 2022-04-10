@@ -7,17 +7,17 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class Config extends YamlFile {
 
-    private final HashMap<String, Integer> taxes; // permission - tax rate
-    private final HashMap<Integer, Double> worthTiers; // tier - worth
+    private final LinkedHashMap<String, Integer> taxes; // permission - tax rate
+    private final LinkedHashMap<Integer, Double> worthTiers; // tier - worth
 
     public Config(SellAll plugin) {
         super(plugin, "config.yml", true);
-        this.taxes = new HashMap<>();
-        this.worthTiers = new HashMap<>();
+        this.taxes = new LinkedHashMap<>();
+        this.worthTiers = new LinkedHashMap<>();
         setup();
         loadData();
     }
@@ -54,11 +54,11 @@ public class Config extends YamlFile {
         }
     }
 
-    public HashMap<Integer, Double> getWorthTiers() {
+    public LinkedHashMap<Integer, Double> getWorthTiers() {
         return worthTiers;
     }
 
-    public HashMap<String, Integer> getTaxes() {
+    public LinkedHashMap<String, Integer> getTaxes() {
         return taxes;
     }
 }

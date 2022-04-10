@@ -11,6 +11,7 @@ tax-permissions:
   sellall-tax-90: 90
 
 worth-tiers:
+  1: 100
   64: 75
   96: 50
   150: 25

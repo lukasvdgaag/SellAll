@@ -128,7 +128,8 @@ public class ItemListMenu extends Menu implements Listener {
                     player.playSound(player.getLocation(), plugin.getMenuFile().getNextPageSound(), 1, 1);
                 }
             }
-            default -> {}
+            default -> {
+            }
         }
     }
 

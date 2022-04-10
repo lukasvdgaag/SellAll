@@ -16,7 +16,7 @@ public class Item {
     private final ItemType type;
     private final String externalId;
     private String externalType;
-    private int maxDailySells;
+    private final int maxDailySells;
 
     public Item(String item, double sellWorth, int maxDailySells) {
         this.id = item;
@@ -31,10 +31,9 @@ public class Item {
                 throw new IllegalArgumentException("Input '" + item + "' does not have the right amount of arguments for an MMO item (type:id). Ignoring it.");
             }
 
-            if (!MMOItems.plugin.getTemplates().hasTemplate(Type.get(split[0]), split[1])){
+            if (!MMOItems.plugin.getTemplates().hasTemplate(Type.get(split[0]), split[1])) {
                 throw new IllegalArgumentException("Input '" + item + "' is not a valid MMO item. Ignoring it.");
-            }
-            else {
+            } else {
                 externalType = split[0];
                 externalId = split[1];
             }
@@ -60,7 +59,7 @@ public class Item {
         String oraxenId = OraxenItems.getIdByItem(input);
         String mmoId = MMOItems.getID(input);
         Type mmoType = MMOItems.getType(input);
-        if (mmoId!= null && mmoId.isEmpty()) mmoId = null;
+        if (mmoId != null && mmoId.isEmpty()) mmoId = null;
         boolean hasNBT = Utils.hasNBTTag(input);
 
         for (Item item : itemFile.getItems()) {
