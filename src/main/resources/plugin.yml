@@ -3,7 +3,7 @@ version: ${project.version}
 description: Custom Sell All plugin
 author: GaagjesCraft Network Team
 main: net.gcnt.sellall.SellAll
-api-version: 1.13
+api-version: 1.19
 depend:
   - Vault
   - MMOItems
