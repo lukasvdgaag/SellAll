@@ -1,2 +1,3 @@
 GOLD_INGOT:
   worth: 100.00
+  max_sells: 20
