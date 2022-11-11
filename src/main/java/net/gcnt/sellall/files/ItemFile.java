@@ -10,8 +10,8 @@ public class ItemFile extends YamlFile {
 
     private final List<Item> items;
 
-    public ItemFile(SellAll plugin) {
-        super(plugin, "items.yml", true);
+    public ItemFile(SellAll plugin, String id) {
+        super(plugin, id + ".yml", null, "items");
         this.items = Lists.newArrayList();
         setup();
         loadData();
