@@ -75,9 +75,8 @@ public class MenuFile extends YamlFile {
     private Sound nextPageSound;
     private Sound previousPageSound;
 
-
-    public MenuFile(SellAll plugin) {
-        super(plugin, "menu.yml", true);
+    public MenuFile(SellAll plugin, String id) {
+        super(plugin, id + ".yml", null, "menus");
         setup();
         loadData();
     }
