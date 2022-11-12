@@ -94,9 +94,7 @@ public class ItemListMenu extends Menu {
 
     @Override
     public void onClick(InventoryClickEvent e) {
-        System.out.println("clicked items list");
         if (!e.getInventory().equals(e.getView().getTopInventory())) {
-            System.out.println("inventories are not the same.");
             return;
         }
 
