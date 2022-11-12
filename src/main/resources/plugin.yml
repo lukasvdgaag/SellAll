@@ -1,7 +1,7 @@
 name: SellAll
 version: ${project.version}
 description: Custom Sell All plugin
-author: GaagjesCraft Network Team
+author: GCNT
 main: net.gcnt.sellall.SellAll
 api-version: 1.19
 depend:

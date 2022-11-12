@@ -34,11 +34,13 @@ public class MenuManager implements Listener {
 
     public void openSellMenu(Player player, String menuName) {
         ActiveMenuViewer viewer = viewers.get(player.getUniqueId());
-        // If the player is not viewing anything, or if they are viewing a different menu, initialize a new viewer
-        if (viewer == null || !viewer.getActiveMenu().getMenuId().equals(menuName)) {
+        if (viewer == null) {
             viewer = new ActiveMenuViewer(player);
-            viewer.setActiveMenu(getNewSellMenu(menuName, viewer));
             viewers.put(player.getUniqueId(), viewer);
+        }
+        // If the player is not viewing anything, or if they are viewing a different menu, initialize a new viewer
+        if (viewer.getActiveMenu() == null || !viewer.getActiveMenu().getMenuId().equals(menuName) || viewer.isLookingAtItems()) {
+            viewer.setActiveMenu(getNewSellMenu(menuName, viewer));
         }
         viewer.setLookingAtItems(false);
         viewer.getActiveMenu().openMenu(true, 1);
@@ -50,11 +52,13 @@ public class MenuManager implements Listener {
 
     public void openItemsMenu(Player player, String menuName, int page) {
         ActiveMenuViewer viewer = viewers.get(player.getUniqueId());
-        // If the player is not viewing anything, or if they are viewing a different menu, initialize a new viewer
-        if (viewer == null || !viewer.getActiveMenu().getMenuId().equals(menuName)) {
+        if (viewer == null) {
             viewer = new ActiveMenuViewer(player);
-            viewer.setActiveMenu(getNewItemListMenu(menuName, viewer));
             viewers.put(player.getUniqueId(), viewer);
+        }
+        // If the player is not viewing anything, or if they are viewing a different menu, initialize a new viewer
+        if (viewer.getActiveMenu() == null || !viewer.getActiveMenu().getMenuId().equals(menuName) || !viewer.isLookingAtItems()) {
+            viewer.setActiveMenu(getNewItemListMenu(menuName, viewer));
         }
         viewer.setLookingAtItems(true);
         viewer.getActiveMenu().openMenu(page == 1, page);
@@ -68,6 +72,7 @@ public class MenuManager implements Listener {
         this.itemFiles.clear();
         menuFiles.forEach((name, file) -> {
             if (itemFiles.containsKey(name)) {
+                plugin.getLogger().info("Found menu file with id " + name + ".");
                 this.menuFiles.put(name, file);
                 this.itemFiles.put(name, itemFiles.get(name));
             } else {
@@ -81,13 +86,13 @@ public class MenuManager implements Listener {
         HashMap<String, E> files = new HashMap<>();
         if (!folder.exists() || !folder.isDirectory()) return files;
 
+
         for (File child : folder.listFiles()) {
             if (!child.getName().endsWith(".yml")) continue;
 
             try {
                 final String id = child.getName().replace(".yml", "");
-                E file = clazz.getConstructor(SellAll.class, String.class, String.class, String.class)
-                        .newInstance(plugin, id, null, folder.getName());
+                E file = clazz.getConstructor(SellAll.class, String.class).newInstance(plugin, id);
                 files.put(id, file);
             } catch (Exception ignored) {
             }
@@ -138,10 +143,9 @@ public class MenuManager implements Listener {
     public void onInventoryClose(InventoryCloseEvent e) {
         final ActiveMenuViewer viewer = getActiveMenuViewer(e.getPlayer().getUniqueId());
         if (viewer == null) return;
+        if (viewer.isIgnoreClose()) return;
 
-        if (!viewer.isIgnoreClose()) {
-            removeActiveMenuViewer(e.getPlayer().getUniqueId());
-        }
+        removeActiveMenuViewer(e.getPlayer().getUniqueId());
         viewer.getActiveMenu().onClose(e);
     }
 

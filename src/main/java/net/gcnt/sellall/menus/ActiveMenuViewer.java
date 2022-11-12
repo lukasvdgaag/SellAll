@@ -9,7 +9,7 @@ import java.util.List;
 public class ActiveMenuViewer {
 
     private final Player player;
-    private final List<ItemStack> sellingItems;
+    private List<ItemStack> sellingItems;
     private boolean lookingAtItems;
     private Menu activeMenu;
     private int itemsPage;
@@ -37,6 +37,10 @@ public class ActiveMenuViewer {
 
     public boolean isIgnoreClose() {
         return ignoreClose;
+    }
+
+    public void setSellingItems(List<ItemStack> sellingItems) {
+        this.sellingItems = sellingItems;
     }
 
     public Menu getActiveMenu() {

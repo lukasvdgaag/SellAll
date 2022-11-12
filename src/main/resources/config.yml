@@ -20,6 +20,7 @@ worth-tiers:
 mysql:
   host: localhost
   port: 3306
+  table_prefix: ''
   database: minecraft
   username: root
   password: password

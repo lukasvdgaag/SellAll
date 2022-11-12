@@ -134,15 +134,18 @@ public class SellMenu extends Menu {
                 menuFile.getProceedLore(),
                 replacements, true);
         this.inventory.setItem(49, item);
-
-        menuViewer.getSellingItems().clear();
-        menuViewer.getSellingItems().addAll(sellingItems);
     }
 
     private void handleTopInventory(InventoryClickEvent e) {
         Player player = menuViewer.getPlayer();
         switch (e.getSlot()) {
-            case 4 -> plugin.getMenuManager().openItemsMenu(player, getMenuId());
+            case 4 -> {
+                menuViewer.setIgnoreClose(true);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    plugin.getMenuManager().openItemsMenu(player, getMenuId());
+                    menuViewer.setIgnoreClose(false);
+                }, 1);
+            }
             case 9 -> {
                 final Location location = player.getLocation().getBlock().getLocation();
                 player.getInventory().addItem(menuViewer.getSellingItems().toArray(new ItemStack[]{}))
@@ -217,7 +220,7 @@ public class SellMenu extends Menu {
 
                 String material = ci.getType() == ItemType.BUKKIT ? item.getType().toString() : ci.getExternalId();
 
-                plugin.getMySQLLog().logSell(log, ci.getType(), material, item.getAmount(), ci.getSellWorth(), taxPercentage);
+                plugin.getMySQLLog().logSell(log, ci.getType(), getMenuId(), material, item.getAmount(), ci.getSellWorth(), taxPercentage);
                 log.setSellCount(ci, log.getSellCount(ci) + item.getAmount());
             }
         }

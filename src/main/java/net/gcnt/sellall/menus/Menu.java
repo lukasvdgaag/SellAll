@@ -52,7 +52,7 @@ public abstract class Menu {
                 newLore.replaceAll(s -> colorize ? Utils.c(s) : s);
             } else {
                 for (String placeholder : placeholders.keySet()) {
-                    newLore.replaceAll(s -> colorize ? s.replace(placeholder, placeholders.get(placeholder)) : Utils.c(s.replace(placeholder, placeholders.get(placeholder))));
+                    newLore.replaceAll(s -> colorize ? Utils.c(s.replace(placeholder, placeholders.get(placeholder))) : s.replace(placeholder, placeholders.get(placeholder)));
                 }
             }
             meta.setLore(newLore);

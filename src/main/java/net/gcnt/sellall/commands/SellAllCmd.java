@@ -62,6 +62,8 @@ public record SellAllCmd(SellAll plugin) implements CommandExecutor, TabComplete
 
             if (plugin.getMenuManager().menuExists(menu)) {
                 plugin.getMenuManager().openSellMenu(target, menu);
+                sender.sendMessage(Utils.c(plugin.getCfg().getString(ConfigProperties.MENU_OPENED_OTHER_MESSAGE))
+                        .replace("%player%", target.getName()));
             } else {
                 sender.sendMessage(Utils.c(plugin.getCfg().getString(ConfigProperties.INVALID_MENU_MESSAGE)));
             }

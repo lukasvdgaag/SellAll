@@ -94,17 +94,25 @@ public class ItemListMenu extends Menu {
 
     @Override
     public void onClick(InventoryClickEvent e) {
-        if (e.getInventory() == null) return;
+        System.out.println("clicked items list");
+        if (!e.getInventory().equals(e.getView().getTopInventory())) {
+            System.out.println("inventories are not the same.");
+            return;
+        }
 
-        Player player = (Player) e.getWhoClicked();
-        if (!e.getInventory().equals(e.getView().getTopInventory())) return;
-
+        final Player player = getPlayer();
         switch (e.getSlot()) {
             // back to main menu slot
-            case 4 -> plugin.getServer().getScheduler().runTaskLater(plugin, () -> plugin.getMenuManager().openSellMenu(player, getMenuId()), 1);
+            case 4 -> {
+                menuViewer.setIgnoreClose(true);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    plugin.getMenuManager().openSellMenu(player, getMenuId());
+                    menuViewer.setIgnoreClose(false);
+                }, 1);
+            }
             case 48 -> {
                 // previous page slot
-                if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
+                if (e.getCurrentItem() != null && e.getCurrentItem().getType() == this.menuFile.getPreviousPageMaterial()) {
                     page = page - 1;
                     loadItems();
                     player.playSound(player.getLocation(), this.menuFile.getPreviousPageSound(), 1, 1);
@@ -112,7 +120,7 @@ public class ItemListMenu extends Menu {
             }
             case 50 -> {
                 // next page slot
-                if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
+                if (e.getCurrentItem() != null && e.getCurrentItem().getType() == this.menuFile.getNextPageMaterial()) {
                     page = page + 1;
                     loadItems();
                     player.playSound(player.getLocation(), this.menuFile.getNextPageSound(), 1, 1);
