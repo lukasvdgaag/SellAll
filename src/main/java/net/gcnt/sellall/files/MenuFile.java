@@ -13,6 +13,7 @@ import java.util.Objects;
 
 public class MenuFile extends YamlFile {
 
+    private final String menuId;
     private String sellMenuTitle;
 
     private Material itemWorthOpenMaterial;
@@ -77,6 +78,7 @@ public class MenuFile extends YamlFile {
 
     public MenuFile(SellAll plugin, String id) {
         super(plugin, id + ".yml", null, "menus");
+        this.menuId = id;
         setup();
         loadData();
     }
@@ -155,6 +157,10 @@ public class MenuFile extends YamlFile {
 
             }
         }
+    }
+
+    public String getMenuId() {
+        return menuId;
     }
 
     public Sound getNextPageSound() {

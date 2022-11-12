@@ -15,7 +15,7 @@ public class Config extends YamlFile {
     private final LinkedHashMap<Integer, Double> worthTiers; // tier - worth
 
     public Config(SellAll plugin) {
-        super(plugin, "config.yml", true);
+        super(plugin, "config.yml", "config.yml");
         this.taxes = new LinkedHashMap<>();
         this.worthTiers = new LinkedHashMap<>();
         setup();

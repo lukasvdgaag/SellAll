@@ -7,10 +7,12 @@ import net.gcnt.sellall.files.config.Config;
 import net.gcnt.sellall.files.logs.Log;
 import net.gcnt.sellall.files.logs.MySQLLog;
 import net.gcnt.sellall.menus.ItemListMenu;
+import net.gcnt.sellall.menus.MenuManager;
 import net.gcnt.sellall.menus.SellMenu;
 import net.gcnt.sellall.utils.Utils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -23,23 +25,12 @@ import java.util.logging.Level;
 public class SellAll extends JavaPlugin implements Listener {
 
     public Economy economy = null;
-    private ItemFile itemFile;
-    private MenuFile menuFile;
+    private MenuManager menuManager;
     private Config config;
     private Log log;
     private Utils utils;
 
-    private ItemListMenu itemListMenu;
-    private SellMenu sellMenu;
     private MySQLLog mySQLLog;
-
-    public ItemFile getItemFile() {
-        return itemFile;
-    }
-
-    public MenuFile getMenuFile() {
-        return menuFile;
-    }
 
     public Config getCfg() {
         return config;
@@ -53,20 +44,16 @@ public class SellAll extends JavaPlugin implements Listener {
         return utils;
     }
 
-    public ItemListMenu getItemListMenu() {
-        return itemListMenu;
-    }
-
-    public SellMenu getSellMenu() {
-        return sellMenu;
-    }
-
     public Economy getEconomy() {
         return economy;
     }
 
     public MySQLLog getMySQLLog() {
         return mySQLLog;
+    }
+
+    public MenuManager getMenuManager() {
+        return menuManager;
     }
 
     @Override
@@ -80,21 +67,20 @@ public class SellAll extends JavaPlugin implements Listener {
             return;
         }
 
-        this.itemFile = new ItemFile(this);
-        this.menuFile = new MenuFile(this);
         this.config = new Config(this);
         this.log = new Log(this);
         this.utils = new Utils(this);
         this.mySQLLog = new MySQLLog(this);
 
-        this.itemListMenu = new ItemListMenu(this);
-        Bukkit.getPluginManager().registerEvents(this.itemListMenu, this);
-        this.sellMenu = new SellMenu(this);
-        Bukkit.getPluginManager().registerEvents(this.sellMenu, this);
+        this.menuManager = new MenuManager(this);
+        this.menuManager.load();
 
-        Bukkit.getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(this.menuManager, this);
 
-        Objects.requireNonNull(getCommand("sellall")).setExecutor(new SellAllCmd(this));
+        final SellAllCmd cmdInstance = new SellAllCmd(this);
+        final PluginCommand command = getCommand("sellall");
+        command.setExecutor(cmdInstance);
+        command.setTabCompleter(cmdInstance);
     }
 
     private boolean setupEconomy() {
@@ -106,10 +92,4 @@ public class SellAll extends JavaPlugin implements Listener {
         return (this.economy != null);
     }
 
-    @EventHandler
-    public void onChat(AsyncPlayerChatEvent e) {
-        if (e.getMessage().equals("opensellmenu")) {
-            Bukkit.getScheduler().runTask(this, () -> sellMenu.openMenu(e.getPlayer(), true, 1));
-        }
-    }
 }

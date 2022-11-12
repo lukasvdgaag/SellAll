@@ -2,25 +2,21 @@ package net.gcnt.sellall.menus;
 
 import com.google.common.collect.Lists;
 import net.gcnt.sellall.SellAll;
+import net.gcnt.sellall.files.ItemFile;
 import net.gcnt.sellall.files.MenuFile;
 import net.gcnt.sellall.items.Item;
 import net.gcnt.sellall.utils.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
-public class ItemListMenu extends Menu implements Listener {
+public class ItemListMenu extends Menu {
 
     private static final List<Integer> FILL_SLOTS = Lists.newArrayList(
             0, 1, 2, 3, 5, 6, 7, 8,
@@ -36,30 +32,33 @@ public class ItemListMenu extends Menu implements Listener {
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
     );
-    private final HashMap<UUID, Integer> inMenus;
 
-    public ItemListMenu(SellAll plugin) {
-        super(plugin);
-        this.inMenus = new HashMap<>();
+    private final ItemFile itemFile;
+
+    public ItemListMenu(SellAll plugin, MenuFile menuFile, ItemFile itemFile, ActiveMenuViewer menuViewer) {
+        super(plugin, menuFile, Bukkit.createInventory(null, 54, Utils.c(menuFile.getItemListMenuTitle())), menuViewer);
+        this.itemFile = itemFile;
     }
 
 
     @Override
-    public void openMenu(Player player, boolean openFirst, int page) {
-        super.openMenu(player, openFirst, page);
+    public void openMenu(boolean openFirst, int page) {
+        super.openMenu(openFirst, page);
+        getPlayer().openInventory(this.inventory);
+        loadItems();
+    }
 
-        MenuFile mf = plugin.getMenuFile();
-        Inventory gui = Bukkit.createInventory(null, 54, Utils.c(mf.getItemListMenuTitle()));
+    public void loadItems() {
+        this.inventory.clear();
+        final ItemStack book = createItemStack(menuFile.getItemListMaterial(), Utils.c(menuFile.getItemListDisplayName()), Utils.c(menuFile.getItemListLore()));
+        this.inventory.setItem(4, book);
 
-        final ItemStack book = createItemStack(mf.getItemListMaterial(), Utils.c(mf.getItemListDisplayName()), Utils.c(mf.getItemListLore()));
-        gui.setItem(4, book);
-
-        final ItemStack orangeFill = createItemStack(mf.getItemListFillMaterial(), "§r", new ArrayList<>());
+        final ItemStack orangeFill = createItemStack(menuFile.getItemListFillMaterial(), "§r", new ArrayList<>());
         for (int slot : FILL_SLOTS) {
-            gui.setItem(slot, orangeFill);
+            this.inventory.setItem(slot, orangeFill);
         }
 
-        List<Item> addedItems = plugin.getItemFile().getItems();
+        List<Item> addedItems = itemFile.getItems();
         int start = addedItems.size() < 28 ? 0 : (page - 1) * 28;
         int end = start + 28;
         if (end > addedItems.size() - 1) {
@@ -70,13 +69,13 @@ public class ItemListMenu extends Menu implements Listener {
 
         if (page > 1) {
             // display previous page item
-            final ItemStack item = createItemStack(mf.getPreviousPageMaterial(), Utils.c(mf.getPreviousPageDisplayName()), Utils.c(Utils.replace(mf.getPreviousPageLore(), "%page%", (page - 1) + "")));
-            gui.setItem(48, item);
+            final ItemStack item = createItemStack(menuFile.getPreviousPageMaterial(), Utils.c(menuFile.getPreviousPageDisplayName()), Utils.c(Utils.replace(menuFile.getPreviousPageLore(), "%page%", (page - 1) + "")));
+            this.inventory.setItem(48, item);
         }
         if (addedItems.size() - 1 >= end) {
             // display next page item
-            final ItemStack item = createItemStack(mf.getNextPageMaterial(), Utils.c(mf.getNextPageDisplayName()), Utils.c(Utils.replace(mf.getNextPageLore(), "%page%", (page + 1) + "")));
-            gui.setItem(50, item);
+            final ItemStack item = createItemStack(menuFile.getNextPageMaterial(), Utils.c(menuFile.getNextPageDisplayName()), Utils.c(Utils.replace(menuFile.getNextPageLore(), "%page%", (page + 1) + "")));
+            this.inventory.setItem(50, item);
         }
 
         int current = 0;
@@ -84,58 +83,42 @@ public class ItemListMenu extends Menu implements Listener {
             final ItemStack item = customItem.getExample();
             if (item != null && item.getItemMeta() != null) {
                 ItemMeta meta = item.getItemMeta();
-                meta.setLore(Utils.c(Utils.replace(mf.getItemListItemLore(), "%worth%", customItem.getSellWorth() + "")));
+                meta.setLore(Utils.c(Utils.replace(menuFile.getItemListItemLore(), "%worth%", customItem.getSellWorth() + "")));
                 item.setItemMeta(meta);
             }
 
-            gui.setItem(EMPTY_SLOTS.get(current), item);
+            this.inventory.setItem(EMPTY_SLOTS.get(current), item);
             current++;
         }
-
-        player.openInventory(gui);
-        inMenus.put(player.getUniqueId(), page);
     }
 
-    @EventHandler
+    @Override
     public void onClick(InventoryClickEvent e) {
         if (e.getInventory() == null) return;
 
         Player player = (Player) e.getWhoClicked();
-        if (!inMenus.containsKey(player.getUniqueId())) return;
-        if (!e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getItemListMenuTitle()))) return;
-
-        e.setCancelled(true);
-
         if (!e.getInventory().equals(e.getView().getTopInventory())) return;
 
         switch (e.getSlot()) {
-            case 4 -> {
-                plugin.getSellMenu().playerCancelClose.add(player.getUniqueId());
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    plugin.getSellMenu().openMenu(player, true, 1);
-                    plugin.getSellMenu().playerCancelClose.remove(player.getUniqueId());
-                }, 1);
-            }
+            // back to main menu slot
+            case 4 -> plugin.getServer().getScheduler().runTaskLater(plugin, () -> plugin.getMenuManager().openSellMenu(player, getMenuId()), 1);
             case 48 -> {
-                if (e.getCurrentItem() != null && e.getCurrentItem().getType() == plugin.getMenuFile().getPreviousPageMaterial()) {
-                    openMenu(player, false, inMenus.get(player.getUniqueId()) - 1);
-                    player.playSound(player.getLocation(), plugin.getMenuFile().getPreviousPageSound(), 1, 1);
+                // previous page slot
+                if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
+                    page = page - 1;
+                    loadItems();
+                    player.playSound(player.getLocation(), this.menuFile.getPreviousPageSound(), 1, 1);
                 }
             }
             case 50 -> {
-                if (e.getCurrentItem() != null && e.getCurrentItem().getType() == plugin.getMenuFile().getNextPageMaterial()) {
-                    openMenu(player, false, inMenus.get(player.getUniqueId()) + 1);
-                    player.playSound(player.getLocation(), plugin.getMenuFile().getNextPageSound(), 1, 1);
+                // next page slot
+                if (e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
+                    page = page + 1;
+                    loadItems();
+                    player.playSound(player.getLocation(), this.menuFile.getNextPageSound(), 1, 1);
                 }
             }
-            default -> {
-            }
         }
-    }
-
-    @EventHandler
-    public void onClose(InventoryCloseEvent e) {
-        inMenus.remove(e.getPlayer().getUniqueId());
     }
 
 }
