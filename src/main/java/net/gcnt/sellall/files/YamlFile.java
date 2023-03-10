@@ -3,6 +3,7 @@ package net.gcnt.sellall.files;
 import net.gcnt.sellall.SellAll;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,29 +13,36 @@ public abstract class YamlFile {
 
     protected final SellAll plugin;
     protected final String fileName;
-    protected final boolean hasResource;
+    protected final String resource;
+    protected final String directory;
     protected File file;
     protected FileConfiguration conf;
 
     public YamlFile(SellAll plugin, String fileName) {
-        this(plugin, fileName, true);
+        this(plugin, fileName, fileName);
     }
 
-    public YamlFile(SellAll plugin, String fileName, boolean hasResource) {
+    public YamlFile(SellAll plugin, String fileName, @Nullable String resource) {
+       this(plugin, fileName, resource, null);
+    }
+
+    public YamlFile(SellAll plugin, String fileName, @Nullable String resource, @Nullable String directory) {
         this.plugin = plugin;
         this.fileName = fileName;
-        this.hasResource = hasResource;
+        this.resource = resource;
+        this.directory = directory;
         determineFile();
     }
 
     public void determineFile() {
-        this.file = new File(plugin.getDataFolder(), this.fileName);
+        File dir = directory == null || directory.equals("") ? plugin.getDataFolder() : new File(plugin.getDataFolder(), directory);
+        this.file = new File(dir, this.fileName);
     }
 
     public void setup() {
         if (!file.exists()) {
 
-            if (hasResource) {
+            if (resource != null) {
                 plugin.saveResource(fileName, false);
             } else {
                 try {

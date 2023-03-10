@@ -12,21 +12,16 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
-public class SellMenu extends Menu implements Listener {
+public class SellMenu extends Menu {
 
     private static final List<Integer> GLASS_SLOTS = Lists.newArrayList(
             0, 1, 2, 3, 5, 6, 7, 8,
@@ -44,193 +39,168 @@ public class SellMenu extends Menu implements Listener {
             19, 20, 21, 22, 23, 24, 25,
             37, 38, 39, 40, 41, 42, 43
     );
-    public final List<UUID> playerCancelClose;
-    private final HashMap<UUID, List<ItemStack>> playerSells;
 
-    public SellMenu(SellAll plugin) {
-        super(plugin);
-        playerCancelClose = new ArrayList<>();
-        playerSells = new HashMap<>();
+    public SellMenu(SellAll plugin, MenuFile menuFile, ActiveMenuViewer menuViewer) {
+        super(plugin, menuFile, Bukkit.createInventory(null, 54, Utils.c(menuFile.getSellMenuTitle())), menuViewer);
     }
 
     @Override
-    public void openMenu(Player player, boolean openFirst, int page) {
-        super.openMenu(player, openFirst, page);
-        MenuFile mf = plugin.getMenuFile();
+    public void openMenu(boolean openFirst, int page) {
+        super.openMenu(openFirst, page);
 
-        Inventory gui = Bukkit.createInventory(null, 54, Utils.c(mf.getSellMenuTitle()));
-
-        player.openInventory(gui);
-        playerCancelClose.remove(player.getUniqueId());
-        loadItems(player, gui, mf);
+        getPlayer().openInventory(this.inventory);
+        loadInventoryItems();
         // loading player sells
-        PlayerLog.getPlayerLog(plugin, player.getUniqueId());
+        PlayerLog.getPlayerLog(plugin, getPlayer().getUniqueId());
     }
 
-    public void loadItems(Player player, Inventory gui, MenuFile mf) {
-        PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
+    /**
+     * Loads the inventory items and updates existing ones.
+     * Used to asynchronously load the inventory items.
+     */
+    public void loadInventoryItems() {
+        PlayerLog log = PlayerLog.getPlayerLog(plugin, getPlayer().getUniqueId());
 
-        final ItemStack worthList = createItemStack(mf.getItemWorthOpenMaterial(), Utils.c(mf.getItemWorthOpenDisplayName()), Utils.c(mf.getItemWorthOpenLore()));
-        gui.setItem(4, worthList);
+        final ItemStack worthList = createItemStack(this.menuFile.getItemWorthOpenMaterial(), Utils.c(this.menuFile.getItemWorthOpenDisplayName()), Utils.c(this.menuFile.getItemWorthOpenLore()));
+        this.inventory.setItem(4, worthList);
 
-        final ItemStack info = createItemStack(mf.getInfoMaterial(), Utils.c(mf.getInfoDisplayName()), Utils.c(mf.getInfoLore()));
-        gui.setItem(53, info);
+        final ItemStack info = createItemStack(this.menuFile.getInfoMaterial(), Utils.c(this.menuFile.getInfoDisplayName()), Utils.c(this.menuFile.getInfoLore()));
+        this.inventory.setItem(53, info);
 
-        final ItemStack glassFill = createItemStack(mf.getFillMaterial(), "§r", new ArrayList<>());
+        final ItemStack glassFill = createItemStack(this.menuFile.getFillMaterial(), "§r", new ArrayList<>());
         for (int slot : GLASS_SLOTS) {
-            gui.setItem(slot, glassFill);
+            this.inventory.setItem(slot, glassFill);
         }
 
         final HashMap<Item, Integer> soldItems = new HashMap<>();
 
         // clearing the item slots if not present.
+        List<ItemStack> sellingItems = menuViewer.getSellingItems();
+
         int curSize = 0;
-        final int size = playerSells.getOrDefault(player.getUniqueId(), new ArrayList<>()).size();
+        final int size = sellingItems.size();
         for (int slot : ITEM_SELL_SLOTS) {
-            if (curSize >= size) gui.setItem(slot, null);
+            if (curSize >= size) this.inventory.setItem(slot, null);
             curSize++;
         }
 
-        final ItemStack desc = createItemStack(mf.getNoItemAddedMaterial(), Utils.c(mf.getNoItemAddedDisplayName()), Utils.c(mf.getNoItemAddedLore()));
+        final ItemStack desc = createItemStack(this.menuFile.getNoItemAddedMaterial(), Utils.c(this.menuFile.getNoItemAddedDisplayName()), Utils.c(this.menuFile.getNoItemAddedLore()));
         for (int slot : ITEM_DESCRIPTION_SLOTS) {
-            gui.setItem(slot, desc);
+            this.inventory.setItem(slot, desc);
         }
 
-        final ItemStack cancel = createItemStack(mf.getCancelMaterial(), Utils.c(mf.getCancelDisplayName()), Utils.c(mf.getCancelLore()));
-        gui.setItem(9, cancel);
-
-        List<ItemStack> currentAdded = playerSells.getOrDefault(player.getUniqueId(), Lists.newArrayList());
+        final ItemStack cancel = createItemStack(this.menuFile.getCancelMaterial(), Utils.c(this.menuFile.getCancelDisplayName()), Utils.c(this.menuFile.getCancelLore()));
+        this.inventory.setItem(9, cancel);
 
         double totalWorth = 0;
 
         int current = 0;
-        for (ItemStack cur : currentAdded) {
+        for (ItemStack cur : sellingItems) {
             if (current == 13) {
                 break;
             }
-            Item ci = Item.fromMaterial(plugin.getItemFile(), cur);
+            Item ci = Item.fromMaterial(plugin.getMenuManager().getItemFile(getMenuId()), cur);
             if (ci == null) continue; // highly unlikely
 
-            gui.setItem(ITEM_SELL_SLOTS.get(current), cur);
+            this.inventory.setItem(ITEM_SELL_SLOTS.get(current), cur);
 
             final Integer currentSells = soldItems.getOrDefault(ci, log.getSellCount(ci));
             final double worth = getWorth(ci, cur.getAmount(), currentSells);
 
             soldItems.put(ci, currentSells + cur.getAmount());
 
-            ItemStack filled = createItemStack(mf.getItemAddedMaterial(), Utils.c(mf.getItemAddedDisplayName()), Utils.c(Utils.replace(mf.getItemAddedLore(), "%worth%", worth + "")));
-            gui.setItem(ITEM_DESCRIPTION_SLOTS.get(current), filled);
+            ItemStack filled = createItemStack(this.menuFile.getItemAddedMaterial(), Utils.c(this.menuFile.getItemAddedDisplayName()), Utils.c(Utils.replace(this.menuFile.getItemAddedLore(), "%worth%", worth + "")));
+            this.inventory.setItem(ITEM_DESCRIPTION_SLOTS.get(current), filled);
 
             totalWorth += worth;
             current++;
         }
 
         double taxAmount;
-        double taxPercentage = plugin.getUtils().getTax(player);
+        double taxPercentage = plugin.getUtils().getTax(getPlayer());
         taxAmount = (totalWorth * (taxPercentage / 100));
 
-        final ItemStack item = createItemStack(mf.getProceedMaterial(),
-                Utils.c(mf.getProceedDisplayName()),
-                Utils.c(
-                        Utils.replace(
-                                Utils.replace(
-                                        Utils.replace(
-                                                Utils.replace(
-                                                        mf.getProceedLore(),
-                                                        "%net%",
-                                                        String.format("%.2f", (totalWorth - taxAmount)))
-                                                ,
-                                                "%tax_percentage%",
-                                                taxPercentage + ""),
-                                        "%tax_amount%",
-                                        String.format("%.2f", taxAmount)),
-                                "%totalworth%",
-                                String.format("%.2f", totalWorth))
-                )
-        );
-        gui.setItem(49, item);
+        final HashMap<String, String> replacements = createHashMap(new String[]{
+                "%net%", "%tax_percentage%", "%tax_amount%", "%totalworth%"
+        }, new String[]{
+                String.format("%.2f", (totalWorth - taxAmount)),
+                taxPercentage + "",
+                String.format("%.2f", taxAmount),
+                String.format("%.2f", totalWorth)
+        });
 
-        playerSells.put(player.getUniqueId(), currentAdded);
+        final ItemStack item = createItemStack(this.menuFile.getProceedMaterial(),
+                menuFile.getProceedDisplayName(),
+                menuFile.getProceedLore(),
+                replacements, true);
+        this.inventory.setItem(49, item);
     }
 
-    private void handleTopInventory(InventoryClickEvent e, Player player) {
+    private void handleTopInventory(InventoryClickEvent e) {
+        Player player = menuViewer.getPlayer();
         switch (e.getSlot()) {
             case 4 -> {
-                playerCancelClose.add(player.getUniqueId());
+                menuViewer.setIgnoreClose(true);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    plugin.getItemListMenu().openMenu(player, true, 1);
-                    playerCancelClose.remove(player.getUniqueId());
-                }, 2);
-
+                    plugin.getMenuManager().openItemsMenu(player, getMenuId());
+                    menuViewer.setIgnoreClose(false);
+                }, 1);
             }
             case 9 -> {
                 final Location location = player.getLocation().getBlock().getLocation();
-                player.getInventory().addItem(playerSells.get(player.getUniqueId()).toArray(new ItemStack[]{}))
+                player.getInventory().addItem(menuViewer.getSellingItems().toArray(new ItemStack[]{}))
                         .forEach((integer, itemStack) ->
                                 player.getWorld().dropItem(location.add(0.5, 0.25, 0.5), itemStack)
                         );
-                playerSells.remove(player.getUniqueId());
+                plugin.getMenuManager().removeActiveMenuViewer(player.getUniqueId());
                 player.closeInventory();
             }
             case 49 -> {
-                if (playerSells.get(player.getUniqueId()).size() > 0) {
-                    sellItems(player);
+                if (menuViewer.getSellingItems().size() > 0) {
+                    sellItems();
                 } else {
-                    player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
+                    player.playSound(player.getLocation(), this.menuFile.getInvalidItemSound(), 1, 1);
                 }
             }
             default -> {
                 if (ITEM_SELL_SLOTS.contains(e.getSlot()) && e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
-                    removeSellItems(player, e.isShiftClick(), e.getCurrentItem());
-                    loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
+                    removeSellItems(e.isShiftClick(), e.getCurrentItem());
+                    loadInventoryItems();
                 }
             }
         }
     }
 
-    private void handleBottomInventory(InventoryClickEvent e, Player player) {
+    private void handleBottomInventory(InventoryClickEvent e) {
         if (e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR) return;
 
-        List<ItemStack> items = playerSells.get(player.getUniqueId());
-
-        Item item = Item.fromMaterial(plugin.getItemFile(), e.getCurrentItem());
+        Item item = Item.fromMaterial(plugin.getMenuManager().getItemFile(getMenuId()), e.getCurrentItem());
         if (item == null) {
-            player.playSound(player.getLocation(), plugin.getMenuFile().getInvalidItemSound(), 1, 1);
+            getPlayer().playSound(getPlayer().getLocation(), this.menuFile.getInvalidItemSound(), 1, 1);
             return;
         }
 
-        if (items.size() < ITEM_SELL_SLOTS.size()) {
-            addSellItem(player, e.isShiftClick(), e.getCurrentItem(), items, e);
-
-            playerCancelClose.add(player.getUniqueId());
-            loadItems(player, e.getView().getTopInventory(), plugin.getMenuFile());
-            playerCancelClose.remove(player.getUniqueId());
+        if (menuViewer.getSellingItems().size() < ITEM_SELL_SLOTS.size()) {
+            addSellItem(e.isShiftClick(), e.getCurrentItem(), menuViewer.getSellingItems(), e);
+            loadInventoryItems();
         }
     }
 
-    @EventHandler
+    @Override
     public void onClick(InventoryClickEvent e) {
-        Player player = (Player) e.getWhoClicked();
-
-        if (e.getInventory() == null) return;
-        if (!playerSells.containsKey(player.getUniqueId())) return;
-        if (!e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getSellMenuTitle()))) return;
-        // player is in the menu
-        e.setCancelled(true);
-        if (playerCancelClose.contains(player.getUniqueId())) return;
-
         if (e.getRawSlot() < e.getView().getTopInventory().getSize()) {
             // click top inventory
-            handleTopInventory(e, player);
+            handleTopInventory(e);
         } else {
             // clicked bottom inventory
-            handleBottomInventory(e, player);
+            handleBottomInventory(e);
         }
     }
 
-    private void sellItems(Player player) {
+    private void sellItems() {
         double totalWorth = 0;
         double taxAmount;
+        final Player player = getPlayer();
         double taxPercentage = plugin.getUtils().getTax(player);
 
         List<ItemStack> sold = Lists.newArrayList();
@@ -238,8 +208,8 @@ public class SellMenu extends Menu implements Listener {
         PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
         final HashMap<Item, Integer> soldItems = new HashMap<>();
 
-        for (ItemStack item : playerSells.get(player.getUniqueId())) {
-            Item ci = Item.fromMaterial(plugin.getItemFile(), item);
+        for (ItemStack item : menuViewer.getSellingItems()) {
+            Item ci = Item.fromMaterial(plugin.getMenuManager().getItemFile(getMenuId()), item);
             if (ci != null) {
                 final Integer currentSells = soldItems.getOrDefault(ci, log.getSellCount(ci));
                 final double itemWorth = getWorth(ci, item.getAmount(), currentSells);
@@ -250,7 +220,7 @@ public class SellMenu extends Menu implements Listener {
 
                 String material = ci.getType() == ItemType.BUKKIT ? item.getType().toString() : ci.getExternalId();
 
-                plugin.getMySQLLog().logSell(log, ci.getType(), material, item.getAmount(), ci.getSellWorth(), taxPercentage);
+                plugin.getMySQLLog().logSell(log, ci.getType(), getMenuId(), material, item.getAmount(), ci.getSellWorth(), taxPercentage);
                 log.setSellCount(ci, log.getSellCount(ci) + item.getAmount());
             }
         }
@@ -262,20 +232,23 @@ public class SellMenu extends Menu implements Listener {
         plugin.getLog().log(player, sold, tax);
         plugin.getEconomy().depositPlayer(Bukkit.getOfflinePlayer(player.getUniqueId()), earned);
 
-        playerCancelClose.add(player.getUniqueId());
         player.closeInventory();
-        playerCancelClose.remove(player.getUniqueId());
-        playerSells.remove(player.getUniqueId());
+        plugin.getMenuManager().removeActiveMenuViewer(player.getUniqueId());
 
-        player.playSound(player.getLocation(), plugin.getMenuFile().getSellSound(), 1, 1);
-        for (String s :
-                Utils.c(Utils.replace(Utils.replace(Utils.replace(Utils.replace(Utils.replace(plugin.getMenuFile().getSellMessage(), "%net%", String.format("%.2f", earned)), "%tax_amount%", tax + ""), "%tax_percentage%", taxPercentage + ""), "%totalworth%", String.format("%.2f", totalWorth) + ""), "%player%", player.getName()))) {
-            player.sendMessage(s);
+        player.playSound(player.getLocation(), this.menuFile.getSellSound(), 1, 1);
+        for (String s : menuFile.getSellMessage()) {
+            s = s.replace("%net%", String.format("%.2f", earned))
+                    .replace("%tax_amount%", tax + "")
+                    .replace("%tax_percentage%", taxPercentage + "")
+                    .replace("%totalworth%", String.format("%.2f", totalWorth) + "")
+                    .replace("%player%", player.getName());
+            player.sendMessage(Utils.c(s));
         }
     }
 
-    private void removeSellItems(Player player, boolean shiftClick, ItemStack currentItem) {
-        List<ItemStack> iis = playerSells.get(player.getUniqueId());
+    private void removeSellItems(boolean shiftClick, ItemStack currentItem) {
+        final Player player = getPlayer();
+        List<ItemStack> iis = menuViewer.getSellingItems();
         int index = iis.indexOf(currentItem);
 
         if (!shiftClick) {
@@ -296,14 +269,13 @@ public class SellMenu extends Menu implements Listener {
             player.getInventory().addItem(currentItem);
         }
 
-        playerSells.put(player.getUniqueId(), iis);
-        player.playSound(player.getLocation(), plugin.getMenuFile().getItemRemoveSound(), 1, 1);
+        player.playSound(player.getLocation(), this.menuFile.getItemRemoveSound(), 1, 1);
     }
 
-    private int getCurrentSellingItemAmount(Player player, Item item) {
+    private int getCurrentSellingItemAmount(Item item) {
         int amount = 0;
-        for (ItemStack itemStack : playerSells.getOrDefault(player.getUniqueId(), new ArrayList<>())) {
-            Item ci = Item.fromMaterial(plugin.getItemFile(), itemStack);
+        for (ItemStack itemStack : menuViewer.getSellingItems()) {
+            Item ci = Item.fromMaterial(plugin.getMenuManager().getItemFile(getMenuId()), itemStack);
             if (ci == null || !ci.getId().equals(item.getId())) continue;
 
             amount += itemStack.getAmount();
@@ -311,12 +283,12 @@ public class SellMenu extends Menu implements Listener {
         return amount;
     }
 
-    private void addItem(Player player, Item current, ItemStack currentItem, int amount, List<ItemStack> items, InventoryClickEvent e) {
+    private void addItem(Item current, ItemStack currentItem, int amount, List<ItemStack> items, InventoryClickEvent e) {
         int amountLeft = currentItem.getAmount() - amount;
 
         boolean yes = false;
         for (ItemStack it : items) {
-            Item item = Item.fromMaterial(plugin.getItemFile(), it);
+            Item item = Item.fromMaterial(plugin.getMenuManager().getItemFile(getMenuId()), it);
             if (item != null && item.equals(current) && it.getAmount() < it.getMaxStackSize()) {
                 if (it.getAmount() + amount <= it.getMaxStackSize()) {
                     it.setAmount(it.getAmount() + amount);
@@ -340,8 +312,6 @@ public class SellMenu extends Menu implements Listener {
         if (currentItem.getAmount() == 0) {
             e.setCurrentItem(null);
         }
-
-        playerSells.put(player.getUniqueId(), items);
     }
 
     private int getTierIndex(int amountSold) {
@@ -386,16 +356,17 @@ public class SellMenu extends Menu implements Listener {
         return worth;
     }
 
-    private void addSellItem(Player player, boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {
-        Item current = Item.fromMaterial(plugin.getItemFile(), currentItem);
+    private void addSellItem(boolean shiftClick, ItemStack currentItem, List<ItemStack> items, InventoryClickEvent e) {
+        Item current = Item.fromMaterial(plugin.getMenuManager().getItemFile(getMenuId()), currentItem);
 
         if (current == null) return;
         int selling = shiftClick ? currentItem.getAmount() : 1;
 
+        final Player player = getPlayer();
         PlayerLog log = PlayerLog.getPlayerLog(plugin, player.getUniqueId());
         if (current.getMaxDailySells() > -1) {
             int sellsLeft = log.getSellsLeft(current);
-            int alreadyAdded = getCurrentSellingItemAmount(player, current);
+            int alreadyAdded = getCurrentSellingItemAmount(current);
 
             if (sellsLeft == -1) {
                 sellsLeft = currentItem.getAmount();
@@ -414,52 +385,29 @@ public class SellMenu extends Menu implements Listener {
             selling = min;
         }
 
-        player.playSound(player.getLocation(), plugin.getMenuFile().getItemAddSound(), 1, 1);
-        addItem(player, current, currentItem, selling, items, e);
+        player.playSound(player.getLocation(), this.menuFile.getItemAddSound(), 1, 1);
+        addItem(current, currentItem, selling, items, e);
     }
 
-    @EventHandler
+    @Override
     public void onClose(InventoryCloseEvent e) {
-        Player player = (Player) e.getPlayer();
+        returnAddedItems();
 
-        if (e.getView().getTitle().equals(Utils.c(plugin.getMenuFile().getSellMenuTitle())) && !playerCancelClose.contains(player.getUniqueId())) {
-            if (!playerSells.containsKey(player.getUniqueId())) return;
-
-            returnAddedItems(player);
-            playerCancelClose.remove(player.getUniqueId());
-
-            if (playerSells.get(player.getUniqueId()).size() > 0) {
-                List<String> cm = plugin.getMenuFile().getCancelMessage();
-                for (String s : Utils.c(cm)) {
-                    player.sendMessage(s);
-                }
+        final Player player = getPlayer();
+        if (menuViewer.getSellingItems().size() > 0) {
+            List<String> cm = this.menuFile.getCancelMessage();
+            for (String s : Utils.c(cm)) {
+                player.sendMessage(s);
             }
-            playerSells.remove(player.getUniqueId());
-            player.playSound(player.getLocation(), plugin.getMenuFile().getCancelSound(), 1, 1);
         }
+        player.playSound(player.getLocation(), this.menuFile.getCancelSound(), 1, 1);
     }
 
-    private void returnAddedItems(Player player) {
-        if (!playerSells.containsKey(player.getUniqueId())) return;
-
-        for (ItemStack item : playerSells.get(player.getUniqueId())) {
-            player.getInventory().addItem(item);
+    private void returnAddedItems() {
+        final Inventory playerInv = getPlayer().getInventory();
+        for (ItemStack item : menuViewer.getSellingItems()) {
+            playerInv.addItem(item);
         }
-    }
-
-    @EventHandler
-    public void onChat(AsyncPlayerChatEvent e) {
-        if (e.getMessage().equalsIgnoreCase("lol")) {
-            e.setCancelled(true);
-            final ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
-            Utils.hasNBTTag(item);
-            e.getPlayer().sendMessage(item.toString());
-        }
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent e) {
-        PlayerLog.removePlayerLog(e.getPlayer().getUniqueId());
     }
 
 }
