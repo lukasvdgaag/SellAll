@@ -109,7 +109,15 @@ public class SellMenu extends Menu {
 
             soldItems.put(ci, currentSells + cur.getAmount());
 
-            ItemStack filled = createItemStack(this.menuFile.getItemAddedMaterial(), Utils.c(this.menuFile.getItemAddedDisplayName()), Utils.c(Utils.replace(this.menuFile.getItemAddedLore(), "%worth%", worth + "")));
+            ItemStack filled = createItemStack(
+                    this.menuFile.getItemAddedMaterial(),
+                    Utils.c(this.menuFile.getItemAddedDisplayName()),
+                    Utils.c(Utils.replace(
+                            this.menuFile.getItemAddedLore(),
+                            "%worth%",
+                            String.format("%.2f", worth))
+                    )
+            );
             this.inventory.setItem(ITEM_DESCRIPTION_SLOTS.get(current), filled);
 
             totalWorth += worth;

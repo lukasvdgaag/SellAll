@@ -120,7 +120,6 @@
             <artifactId>spigot</artifactId>
             <version>1.19.3-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
-            <classifier>remapped-mojang</classifier>
         </dependency>
         <dependency>
             <groupId>com.github.Th0rgal</groupId>
