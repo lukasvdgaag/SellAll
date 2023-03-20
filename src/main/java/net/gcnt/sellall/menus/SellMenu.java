@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class SellMenu extends Menu {
 
@@ -147,6 +148,7 @@ public class SellMenu extends Menu {
     private void handleTopInventory(InventoryClickEvent e) {
         Player player = menuViewer.getPlayer();
         switch (e.getSlot()) {
+            // clicking the worth list
             case 4 -> {
                 menuViewer.setIgnoreClose(true);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -154,6 +156,7 @@ public class SellMenu extends Menu {
                     menuViewer.setIgnoreClose(false);
                 }, 1);
             }
+            // clicking the cancel button
             case 9 -> {
                 final Location location = player.getLocation().getBlock().getLocation();
                 player.getInventory().addItem(menuViewer.getSellingItems().toArray(new ItemStack[]{}))
@@ -163,6 +166,7 @@ public class SellMenu extends Menu {
                 plugin.getMenuManager().removeActiveMenuViewer(player.getUniqueId());
                 player.closeInventory();
             }
+            // clicking the submit button
             case 49 -> {
                 if (menuViewer.getSellingItems().size() > 0) {
                     sellItems();
@@ -170,6 +174,7 @@ public class SellMenu extends Menu {
                     player.playSound(player.getLocation(), this.menuFile.getInvalidItemSound(), 1, 1);
                 }
             }
+            // clicking anything else, checking if the slot belongs to an item that is being sold
             default -> {
                 if (ITEM_SELL_SLOTS.contains(e.getSlot()) && e.getCurrentItem() != null && e.getCurrentItem().getType() != Material.AIR) {
                     removeSellItems(e.isShiftClick(), e.getCurrentItem());
@@ -240,8 +245,8 @@ public class SellMenu extends Menu {
         plugin.getLog().log(player, sold, tax);
         plugin.getEconomy().depositPlayer(Bukkit.getOfflinePlayer(player.getUniqueId()), earned);
 
-        player.closeInventory();
         plugin.getMenuManager().removeActiveMenuViewer(player.getUniqueId());
+        player.closeInventory();
 
         player.playSound(player.getLocation(), this.menuFile.getSellSound(), 1, 1);
         for (String s : menuFile.getSellMessage()) {
