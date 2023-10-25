@@ -1,6 +1,6 @@
 package net.gcnt.sellall.items;
 
-import io.th0rgal.oraxen.items.OraxenItems;
+import io.th0rgal.oraxen.api.OraxenItems;
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import net.gcnt.sellall.files.ItemFile;

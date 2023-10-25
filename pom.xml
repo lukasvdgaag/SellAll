@@ -6,7 +6,7 @@
 
     <groupId>net.gcnt</groupId>
     <artifactId>SellAll</artifactId>
-    <version>2.0.1</version>
+    <version>2.0.2</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -30,11 +30,17 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.2.0</version>
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath> <!-- Include classpath information in manifest -->
+                            <mainClass>net.gcnt.sellall.SellAll</mainClass> <!-- Specify your main class -->
+                        </manifest>
+                    </archive>
                 </configuration>
                 <executions>
                     <execution>
@@ -58,9 +64,9 @@
                         </goals>
                         <id>remap-obf</id>
                         <configuration>
-                            <srgIn>org.spigotmc:minecraft-server:1.19.3-R0.1-SNAPSHOT:txt:maps-mojang</srgIn>
+                            <srgIn>org.spigotmc:minecraft-server:1.20.1-R0.1-SNAPSHOT:txt:maps-mojang</srgIn>
                             <reverse>true</reverse>
-                            <remappedDependencies>org.spigotmc:spigot:1.19.3-R0.1-SNAPSHOT:jar:remapped-mojang
+                            <remappedDependencies>org.spigotmc:spigot:1.20.1-R0.1-SNAPSHOT:jar:remapped-mojang
                             </remappedDependencies>
                             <remappedArtifactAttached>true</remappedArtifactAttached>
                             <remappedClassifierName>remapped-obf</remappedClassifierName>
@@ -118,29 +124,35 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
-            <version>1.19.3-R0.1-SNAPSHOT</version>
+            <version>1.20.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
+            <classifier>remapped-mojang</classifier>
         </dependency>
         <dependency>
             <groupId>com.github.Th0rgal</groupId>
             <artifactId>Oraxen</artifactId>
-            <version>1.122.1</version>
+            <version>1.162.1</version>
             <scope>system</scope>
-            <systemPath>C:/Users/gaagj/OneDrive/SellAll/lib/oraxen-1.122.1-all.jar</systemPath>
+            <systemPath>${project.basedir}/lib/oraxen-1.162.1.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>24.0.1</version>
         </dependency>
         <dependency>
             <groupId>io.lumine</groupId>
             <artifactId>MMOItems</artifactId>
-            <version>6.6.5</version>
+            <version>6.9.4</version>
             <scope>system</scope>
-            <systemPath>C:/Users/gaagj/OneDrive/SellAll/lib/MMOItems-6.6.5.jar</systemPath>
+            <systemPath>${project.basedir}/lib/MMOItems-6.9.4.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>io.lumine</groupId>
             <artifactId>MythicLib</artifactId>
-            <version>1.2</version>
+            <version>1.6.1</version>
             <scope>system</scope>
-            <systemPath>C:/Users/gaagj/OneDrive/SellAll/lib/MythicLib-1.2.jar</systemPath>
+            <systemPath>${project.basedir}/lib/MythicLib-1.6.1.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -149,5 +161,4 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
-
 </project>
